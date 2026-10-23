@@ -24,10 +24,7 @@
 - `null` provider is always forced last; settings in `chrome.storage.local` (not Dexie `settings`,
   which is reserved for app state). ESLint bans `chrome`/`browser`/`window`/`document` in `src/core`.
 - Lexicon primary key is `[lang+lemma]`; transcripts key = `${site}:${videoId}:${lang}:${schemaVersion}`.
+  **Known issues**
 
-**Known issues**
-
-- `pnpm dev` not run in CI container (no display); verify locally.
-- Language list is en/es/fr/ja/ko only; extend `LANGUAGES` in `src/core/settings.ts`.
-
-**Next:** M1 — YouTube caption pipeline + overlay.
+- `pnpm dev` unverified here (no display). Languages: en/es/fr/ja/ko (`LANGUAGES` in core/settings).
+  **Next:** M1 — YouTube caption pipeline + overlay.
