@@ -78,6 +78,41 @@ describe('parseAnnotation', () => {
     expect(out?.[1]?.tokens[1]?.pos).toBe('X');
   });
 
+  it('accepts object entries and lines numbered from 1', () => {
+    const out = parseAnnotation(
+      {
+        lines: [
+          {
+            i: 1,
+            w: [
+              { s: 'Hola', l: 'hola', p: 'INTJ', g: 'hi' },
+              { s: 'a', l: 'a', p: 'ADP', g: 'to' },
+              { s: 'todos', l: 'todo', p: 'PRON', g: 'all' },
+            ],
+          },
+          {
+            i: 2,
+            w: [
+              { s: 'Tengo', l: 'tener', p: 'VERB', g: 'I have' },
+              { s: 'un', l: 'uno', p: 'DET', g: 'a' },
+              { s: 'perro', l: 'perro', p: 'NOUN', g: 'dog' },
+            ],
+          },
+        ],
+      },
+      cues,
+      'es',
+    );
+    expect(out?.[0]?.tokens[2]?.gloss).toBe('all');
+    expect(out?.[1]?.tokens[0]).toMatchObject({ lemma: 'tener', pos: 'VERB', start: 0, end: 5 });
+  });
+
+  it('object-style prompts constrain each word', () => {
+    const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, style: 'object' });
+    expect(JSON.stringify(p.schema)).toContain('"required":["s","l","p","g"]');
+    expect(p.system).toContain('s = the word exactly as listed');
+  });
+
   it('rejects malformed or low-coverage responses', () => {
     expect(parseAnnotation({ nope: 1 }, cues, 'es')).toBeNull();
     expect(parseAnnotation({ lines: [{ i: 0, w: ['Hola|hola|INTJ|hi'] }] }, cues, 'es')).toBeNull();

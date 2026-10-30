@@ -28,9 +28,32 @@ export interface PromptOptions {
   nativeName: string;
   /** Ask for a full-line translation per cue too. */
   withLineTranslation: boolean;
+  /**
+   * compact: one "surface|lemma|POS|gloss" string per word (fewest output tokens).
+   * object: one {s,l,p,g} object per word, so a schema-constrained small model
+   * (Gemini Nano) can't get the format wrong.
+   */
+  style?: EntryStyle;
 }
 
-export function annotationSchema(withLineTranslation: boolean): Record<string, unknown> {
+export type EntryStyle = 'compact' | 'object';
+
+const OBJECT_ENTRY = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['s', 'l', 'p', 'g'],
+  properties: {
+    s: { type: 'string' },
+    l: { type: 'string' },
+    p: { type: 'string', enum: UPOS },
+    g: { type: 'string' },
+  },
+};
+
+export function annotationSchema(
+  withLineTranslation: boolean,
+  style: EntryStyle = 'compact',
+): Record<string, unknown> {
   const line: Record<string, unknown> = {
     type: 'object',
     additionalProperties: false,
@@ -38,7 +61,7 @@ export function annotationSchema(withLineTranslation: boolean): Record<string, u
     properties: {
       i: { type: 'integer' },
       ...(withLineTranslation ? { t: { type: 'string' } } : {}),
-      w: { type: 'array', items: { type: 'string' } },
+      w: { type: 'array', items: style === 'object' ? OBJECT_ENTRY : { type: 'string' } },
     },
   };
   return {
@@ -55,13 +78,25 @@ export function buildAnnotationPrompt(
   lang: string,
   opts: PromptOptions,
 ): AnnotationPrompt {
-  const { langName, nativeName, withLineTranslation } = opts;
+  const { langName, nativeName, withLineTranslation, style = 'compact' } = opts;
+  const fields =
+    style === 'object'
+      ? [
+          `For every listed word, in order, output an object in "w":`,
+          `s = the word exactly as listed; l = its dictionary form in ${langName};`,
+          `p = its Universal Dependencies part-of-speech tag;`,
+          `g = a short ${nativeName} meaning (1-3 words) that fits THIS sentence.`,
+          `"i" is the line number shown in brackets.`,
+        ]
+      : [
+          `For every listed word, in order, output one string "surface|lemma|POS|gloss":`,
+          `surface = the word exactly as listed; lemma = its dictionary form in ${langName};`,
+          `POS = one Universal Dependencies tag (${UPOS.join(', ')});`,
+          `gloss = a short ${nativeName} meaning (1-3 words) that fits THIS sentence.`,
+        ];
   const system = [
     `You annotate ${langName} subtitles for a ${nativeName}-speaking language learner.`,
-    `For every listed word, in order, output one string "surface|lemma|POS|gloss":`,
-    `surface = the word exactly as listed; lemma = its dictionary form in ${langName};`,
-    `POS = one Universal Dependencies tag (${UPOS.join(', ')});`,
-    `gloss = a short ${nativeName} meaning (1-3 words) that fits THIS sentence.`,
+    ...fields,
     withLineTranslation
       ? `Also give "t": a natural ${nativeName} translation of the whole line.`
       : '',
@@ -81,7 +116,7 @@ export function buildAnnotationPrompt(
   return {
     system,
     user: `${contextText}Lines:\n${lines}`,
-    schema: annotationSchema(withLineTranslation),
+    schema: annotationSchema(withLineTranslation, style),
   };
 }
 
@@ -102,12 +137,21 @@ function bareToken(w: WordSpan): Token {
 
 const UPOS_SET = new Set<string>(UPOS);
 
-/** Align `surface|lemma|POS|gloss` entries onto spans, tolerating skipped or extra entries. */
+/** Either entry style as [surface, lemma, pos, gloss], or null if unusable. */
+function entryParts(e: unknown): string[] | null {
+  if (typeof e === 'string') {
+    const p = e.split('|').map((x) => x.trim());
+    return p.length >= 4 && p[0] ? [p[0], p[1] ?? '', p[2] ?? '', p.slice(3).join('|')] : null;
+  }
+  const o = e as { s?: unknown; l?: unknown; p?: unknown; g?: unknown } | null;
+  if (!o || typeof o !== 'object' || typeof o.s !== 'string' || !o.s.trim()) return null;
+  const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  return [o.s.trim(), str(o.l), str(o.p), str(o.g)];
+}
+
+/** Align entries onto spans, tolerating skipped or extra entries. */
 function alignWords(spans: WordSpan[], entries: unknown[]): { tokens: Token[]; hits: number } {
-  const parsed = entries
-    .filter((e): e is string => typeof e === 'string')
-    .map((e) => e.split('|').map((p) => p.trim()))
-    .filter((p) => p.length >= 4 && p[0]);
+  const parsed = entries.map(entryParts).filter((p): p is string[] => p !== null);
   let j = 0;
   let hits = 0;
   const tokens = spans.map((w) => {
@@ -122,7 +166,7 @@ function alignWords(spans: WordSpan[], entries: unknown[]): { tokens: Token[]; h
         surface: w.surface,
         lemma: (p[1] as string) || w.surface.toLocaleLowerCase(),
         pos: UPOS_SET.has(pos) ? pos : 'X',
-        gloss: p.slice(3).join('|'),
+        gloss: p[3] ?? '',
         start: w.start,
         end: w.end,
       };
@@ -143,11 +187,14 @@ export function parseAnnotation(
 ): AnnotatedCue[] | null {
   const lines = (raw as { lines?: unknown } | null)?.lines;
   if (!Array.isArray(lines)) return null;
-  const byIndex = new Map<number, { t?: unknown; w?: unknown }>();
-  for (const l of lines) {
-    if (l && typeof l === 'object' && Number.isInteger((l as { i?: unknown }).i)) {
-      byIndex.set((l as { i: number }).i, l as { t?: unknown; w?: unknown });
-    }
+  type Line = { i?: unknown; t?: unknown; w?: unknown };
+  const objs = lines.filter((l): l is Line => !!l && typeof l === 'object');
+  const byIndex = new Map<number, Line>();
+  for (const l of objs) if (Number.isInteger(l.i)) byIndex.set(l.i as number, l);
+  // Small models sometimes number from 1 or drop "i": fall back to order when counts match.
+  if (cues.some((_, i) => !byIndex.has(i)) && objs.length === cues.length) {
+    byIndex.clear();
+    objs.forEach((l, i) => byIndex.set(i, l));
   }
   let words = 0;
   let hits = 0;

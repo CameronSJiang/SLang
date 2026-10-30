@@ -1,6 +1,7 @@
 /** Shared annotate/translate logic for providers that answer JSON prompts. */
 import {
   buildAnnotationPrompt,
+  type EntryStyle,
   parseAnnotation,
   parseTranslation,
   translationSchema,
@@ -24,15 +25,28 @@ export async function annotateWithJson(
   cues: Cue[],
   ctx: AnnotateContext,
   withLineTranslation: boolean,
+  style: EntryStyle = 'compact',
 ): Promise<AnnotatedCue[]> {
   const p = buildAnnotationPrompt(cues, ctx.context, ctx.lang, {
     langName: langName(ctx.lang),
     nativeName: langName(ctx.nativeLang),
     withLineTranslation,
+    style,
   });
-  const out = parseAnnotation(await complete(p.system, p.user, p.schema), cues, ctx.lang);
-  if (!out) throw new InvalidResponseError('Annotation response failed validation');
+  const raw = await complete(p.system, p.user, p.schema);
+  const out = parseAnnotation(raw, cues, ctx.lang);
+  if (!out) {
+    throw new InvalidResponseError(
+      `Annotation response failed validation. Model said: ${snippet(raw)}`,
+    );
+  }
   return out;
+}
+
+/** Start of a model response, for error messages. Caption text only — never secrets. */
+export function snippet(raw: unknown, max = 300): string {
+  const s = typeof raw === 'string' ? raw : JSON.stringify(raw);
+  return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
 export async function translateWithJson(

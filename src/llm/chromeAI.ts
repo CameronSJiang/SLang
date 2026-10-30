@@ -4,7 +4,7 @@
  * document (offscreen document or options page). Downloading a model needs
  * a user click, so setup happens from the options page.
  */
-import { annotateWithJson, translateWithJson, type JsonCompleter } from './prompted';
+import { annotateWithJson, snippet, translateWithJson, type JsonCompleter } from './prompted';
 import { InvalidResponseError, ProviderUnavailableError, type LLMProvider } from './types';
 
 export type AIAvailability = 'unavailable' | 'downloadable' | 'downloading' | 'available';
@@ -165,7 +165,7 @@ export class ChromeAIProvider implements LLMProvider {
         try {
           return JSON.parse(text);
         } catch {
-          throw new InvalidResponseError('Response was not JSON');
+          throw new InvalidResponseError(`Response was not JSON: ${snippet(text)}`);
         }
       } finally {
         s.destroy();
@@ -180,6 +180,7 @@ export class ChromeAIProvider implements LLMProvider {
       cues,
       ctx,
       !translator,
+      'object',
     );
     if (translator) {
       for (const c of out) c.l1 = (await translator.translate(c.text).catch(() => '')) || c.l1;
