@@ -70,7 +70,30 @@ function manualCues(events: Json3Event[]): Cue[] {
     const end = start + Math.max(0, num(e.dDurationMs));
     cues.push({ id: `c${cues.length}`, start: start / 1000, end: end / 1000, text });
   }
-  return cues;
+  return collapseRolling(cues);
+}
+
+/**
+ * Merge "rolling" captions, where each event repeats the previous one plus a few
+ * more words ("hola" → "hola a" → "hola a todos"), into one cue with the full text.
+ */
+export function collapseRolling(cues: Cue[]): Cue[] {
+  const out: Cue[] = [];
+  for (const c of cues) {
+    const prev = out[out.length - 1];
+    if (
+      prev &&
+      c.start <= prev.end + 0.05 &&
+      c.text.startsWith(prev.text) &&
+      c.text !== prev.text
+    ) {
+      prev.text = c.text;
+      prev.end = Math.max(prev.end, c.end);
+      continue;
+    }
+    out.push({ ...c });
+  }
+  return out.map((c, i) => ({ ...c, id: `c${i}` }));
 }
 
 function wordsOf(events: Json3Event[]): Word[] {

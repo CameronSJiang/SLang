@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseJson3 } from '../src/core/json3';
+import { collapseRolling, parseJson3 } from '../src/core/json3';
 import asr from './fixtures/json3-asr.json';
 import manual from './fixtures/json3-manual.json';
 
@@ -39,5 +39,20 @@ describe('parseJson3', () => {
     expect(parseJson3(null)).toEqual([]);
     expect(parseJson3({ events: 'x' })).toEqual([]);
     expect(parseJson3({ events: [null, 3, { segs: [{ utf8: 5 }] }] })).toEqual([]);
+  });
+});
+
+describe('collapseRolling', () => {
+  it('merges captions that grow word by word', () => {
+    const rolling = [
+      { id: 'a', start: 1, end: 1.5, text: 'cualquier' },
+      { id: 'b', start: 1.5, end: 2, text: 'cualquier momento' },
+      { id: 'c', start: 2, end: 3, text: 'cualquier momento tengo que elegir' },
+      { id: 'd', start: 3.5, end: 5, text: 'entre dos opciones' },
+    ];
+    expect(collapseRolling(rolling)).toEqual([
+      { id: 'c0', start: 1, end: 3, text: 'cualquier momento tengo que elegir' },
+      { id: 'c1', start: 3.5, end: 5, text: 'entre dos opciones' },
+    ]);
   });
 });

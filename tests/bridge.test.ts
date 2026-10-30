@@ -5,7 +5,13 @@ const TT = 'https://www.youtube.com/api/timedtext?v=abc123&lang=es&kind=asr&fmt=
 
 describe('timedtextInfo', () => {
   it('reads video, language and kind', () => {
-    expect(timedtextInfo(TT)).toEqual({ videoId: 'abc123', lang: 'es', kind: 'asr', fmt: 'json3' });
+    expect(timedtextInfo(TT)).toEqual({
+      videoId: 'abc123',
+      lang: 'es',
+      kind: 'asr',
+      fmt: 'json3',
+      translated: false,
+    });
     expect(timedtextInfo('/api/timedtext?v=a&lang=en')).toMatchObject({
       kind: 'manual',
       lang: 'en',
@@ -13,7 +19,10 @@ describe('timedtextInfo', () => {
   });
 
   it('uses the translation target for auto-translated tracks', () => {
-    expect(timedtextInfo('/api/timedtext?v=a&lang=en&tlang=es')?.lang).toBe('es');
+    expect(timedtextInfo('/api/timedtext?v=a&lang=en&tlang=es')).toMatchObject({
+      lang: 'es',
+      translated: true,
+    });
   });
 
   it('rejects other URLs', () => {

@@ -91,6 +91,9 @@ export function startYouTubeAdapter(
     }
     const info = timedtextInfo(m.url);
     if (!info || info.videoId !== state.videoId) return;
+    // YouTube's own auto-translations arrive as word-by-word fragments; we translate
+    // whole lines ourselves instead (and the MAIN bridge switches auto-translate off).
+    if (info.translated) return;
     let data: unknown;
     try {
       data = JSON.parse(m.body);

@@ -62,6 +62,8 @@ export interface TimedtextInfo {
   lang: string;
   kind: 'manual' | 'asr';
   fmt: string;
+  /** YouTube auto-translated this track (`tlang`); `lang` is then the translation's language. */
+  translated: boolean;
 }
 
 /** Parse a `/api/timedtext` URL, or null if it isn't one. */
@@ -81,6 +83,7 @@ export function timedtextInfo(url: string): TimedtextInfo | null {
     lang,
     kind: u.searchParams.get('kind') === 'asr' ? 'asr' : 'manual',
     fmt: u.searchParams.get('fmt') ?? '',
+    translated: !!u.searchParams.get('tlang'),
   };
 }
 

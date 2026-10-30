@@ -69,14 +69,16 @@ export default defineContentScript({
     /** What to play and show for the current video and preset. */
     const plan = () => {
       const source = pickSource(state.sources, settings.nativeLang);
+      // On-screen (live) cues grow word by word: fine to read, never to speak.
+      const fullTarget = state.status === 'ready' && !state.live;
       const pb: Playback = resolvePlayback(settings.playbackPreset, {
         targetLang: settings.targetLang,
         spokenLang: state.tracks?.find((t) => t.kind === 'asr')?.lang ?? null,
-        hasTarget: state.status === 'ready',
+        hasTarget: fullTarget,
         hasSource: !!source,
       });
-      // Dubbing a video that has no target-language track means translating `source`.
-      const translate = pb.audio === 'dub' && state.status !== 'ready' && source ? source : null;
+      // Dubbing without a full target-language transcript means translating `source`.
+      const translate = pb.audio === 'dub' && !fullTarget && source ? source : null;
       return { pb, translate };
     };
 
@@ -275,7 +277,12 @@ export default defineContentScript({
       const { pb, translate } = plan();
       const v = video();
       const cues = targetCues(!!translate).cues;
-      const want = settings.overlayEnabled && pb.audio === 'dub' && !!v && cues.length > 0;
+      const want =
+        settings.overlayEnabled &&
+        pb.audio === 'dub' &&
+        (!!translate || !state.live) &&
+        !!v &&
+        cues.length > 0;
       if (
         engine &&
         (!want ||
