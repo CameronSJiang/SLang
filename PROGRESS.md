@@ -1,28 +1,29 @@
 # Progress
 
-## M0 — Scaffold ✅
+## M0–M1 — Scaffold, caption pipeline + overlay ✅
 
-Scaffold, options page, repo moved + renamed. TS pinned to 6.0 (typescript-eslint); CI = `pnpm check`
-(`pnpm ci` is reserved); `null` provider forced last; ESLint bans `chrome`/DOM globals in `src/core`.
+TS 6.0 (typescript-eslint); CI = `pnpm check`. json3 capture + track forcing, DOM fallback, SPA nav/ads,
+Shadow DOM overlay (rVFC, drag, size/contrast), no-captions notice, HTML5 adapter. Verified on live YouTube.
 
-## M1 — Caption pipeline + overlay ✅
+## M2 — Annotation (LLM) + caching ✅
 
 **Done**
 
-- `core/json3.ts` (manual events → cues; ASR words merged on punctuation / gap > 0.8s / 12 words),
-  `core/cueIndex.ts` (binary search), `core/lang.ts` (track match/pick), `core/liveCues.ts` (DOM fallback, VTT clean).
-- `adapters/youtubeMain.ts` (MAIN): wraps fetch + XHR for `/api/timedtext`, reads tracks from the player,
-  turns on the best track via player API, replays cache to the isolated script. `adapters/bridge.ts` validates messages.
-- `adapters/youtube.ts` (ISOLATED): json3 primary, `.ytp-caption-segment` fallback, SPA nav, ads, track switches;
-  keeps non-target tracks in `state.sources` for M2.5. `adapters/html5.ts` + popup "Show captions on this page".
-- `ui/overlay/`: Shadow DOM inside `#movie_player`, rVFC sync (timeupdate fallback), drag to move (saved),
-  font size / high contrast / on-off settings, "No Spanish captions" notice, native captions hidden (opacity 0).
-- 27 unit tests; headless e2e on a mock YouTube page passes 18/18 (sync, ads, drag, SPA nav, html5).
-  **Decisions**
-- Spec gap: player only fetches timedtext when CC is on, so we enable the target track (`setOption`) ourselves;
-  if we turned CC on, turning the overlay off turns it back off.
-- Most recent target-language capture wins (respects a manual track switch). No transcript caching until M2.
-  **Known issues**
-- Not tested on live YouTube from CI (blocked); player API (`setOption`/`getPlayerResponse`) is undocumented.
-- Shorts and m.youtube.com unsupported. Generic adapter can't show over sites that fullscreen the bare `<video>`.
-  **Next:** M2 — annotation (LLM) + caching.
+- `core/tokenize.ts` (Intl.Segmenter), `core/annotation.ts` (prompt, schema, `surface|lemma|POS|gloss` alignment,
+  validation, null annotate, hash), `core/batching.ts` (chunks + 2-cue context, playhead-first order).
+- `llm/`: `LLMProvider`, Null, Anthropic (SDK, `claude-haiku-5-5`, effort low, json_schema output), Chrome AI
+  (Prompt API + Translator, in an offscreen doc), `annotator.ts` (retry once → Null, cache, resume).
+- Background job per transcript, streamed to the tab over a port; Dexie cache; hover caption → L1 line;
+  status pill; options: Chrome AI status / Download / Test, Test Anthropic key.
+- 43 unit tests; headless e2e: second load 0 API calls, hover L1, offscreen messaging, Chrome AI setup (faked).
+
+**Decisions**
+
+- New dep `@anthropic-ai/sdk` and `offscreen` permission (approved). Chrome AI chunk = 6 cues (Nano is slow).
+- Cache key lang segment is `${lang}>${nativeLang}`; Null-annotated cues are redone once a real provider exists.
+
+**Known issues**
+
+- Real Gemini Nano speed/quality untested (headless has no model). Live (DOM-fallback) cues aren't annotated.
+
+**Next:** M2.5 — Dub mode.

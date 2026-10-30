@@ -14,7 +14,7 @@ Full spec: `SPEC.md`. Progress log: `PROGRESS.md`.
 - If something in SPEC.md is wrong or impossible, say so in one line and propose the fix; don't silently diverge.
 
 ## Stack (approved deps)
-WXT (MV3) · TypeScript strict · Preact · Dexie (IndexedDB) · ts-fsrs · Vitest · ESLint + Prettier. Package manager: pnpm.
+WXT (MV3) · TypeScript strict · Preact · Dexie (IndexedDB) · ts-fsrs · @anthropic-ai/sdk · Vitest · ESLint + Prettier. Package manager: pnpm.
 
 ## Architecture rules
 - `src/core/` = pure TS, ZERO `chrome.*` / DOM calls (tokenize, learner model, gloss policy, FSRS, scoring). Must be portable to a future Safari Web Extension / mobile app. Unit-test everything here.

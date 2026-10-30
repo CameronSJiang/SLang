@@ -1,0 +1,115 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildAnnotationPrompt,
+  hashCues,
+  nullAnnotate,
+  parseAnnotation,
+  parseTranslation,
+} from '../src/core/annotation';
+
+const cues = [
+  { id: 'c0', start: 0, end: 2, text: 'Hola a todos.' },
+  { id: 'c1', start: 2, end: 4, text: 'Tengo un perro.' },
+];
+const opts = { langName: 'Spanish', nativeName: 'English', withLineTranslation: true };
+
+describe('buildAnnotationPrompt', () => {
+  it('numbers lines, lists our words, and includes context', () => {
+    const p = buildAnnotationPrompt(
+      cues,
+      [{ id: 'x', start: 0, end: 0, text: 'Antes.' }],
+      'es',
+      opts,
+    );
+    expect(p.user).toContain('> Antes.');
+    expect(p.user).toContain('[1] Tengo un perro.\nwords: Tengo · un · perro');
+    expect(JSON.stringify(p.schema)).toContain('"t"');
+    expect(
+      JSON.stringify(
+        buildAnnotationPrompt(cues, [], 'es', { ...opts, withLineTranslation: false }).schema,
+      ),
+    ).not.toContain('"t"');
+  });
+});
+
+describe('parseAnnotation', () => {
+  it('aligns entries onto our spans and keeps offsets', () => {
+    const out = parseAnnotation(
+      {
+        lines: [
+          {
+            i: 0,
+            t: 'Hi everyone.',
+            w: ['Hola|hola|INTJ|hi', 'a|a|ADP|to', 'todos|todo|PRON|everyone'],
+          },
+          {
+            i: 1,
+            t: 'I have a dog.',
+            w: ['tengo|tener|VERB|I have', 'un|uno|DET|a', 'perro|perro|NOUN|dog'],
+          },
+        ],
+      },
+      cues,
+      'es',
+    );
+    expect(out?.[1]?.tokens[0]).toEqual({
+      surface: 'Tengo',
+      lemma: 'tener',
+      pos: 'VERB',
+      gloss: 'I have',
+      start: 0,
+      end: 5,
+    });
+    expect(out?.[0]?.l1).toBe('Hi everyone.');
+  });
+
+  it('tolerates a skipped word and bad POS without shifting the rest', () => {
+    const out = parseAnnotation(
+      {
+        lines: [
+          { i: 0, w: ['Hola|hola|INTJ|hi', 'todos|todo|PRON|everyone'] },
+          { i: 1, w: ['Tengo|tener|VERB|I have', 'un|uno|DETERMINER|a', 'perro|perro|NOUN|dog'] },
+        ],
+      },
+      cues,
+      'es',
+    );
+    expect(out?.[0]?.tokens.map((t) => t.gloss)).toEqual(['hi', '', 'everyone']);
+    expect(out?.[1]?.tokens[1]?.pos).toBe('X');
+  });
+
+  it('rejects malformed or low-coverage responses', () => {
+    expect(parseAnnotation({ nope: 1 }, cues, 'es')).toBeNull();
+    expect(parseAnnotation({ lines: [{ i: 0, w: ['Hola|hola|INTJ|hi'] }] }, cues, 'es')).toBeNull();
+  });
+});
+
+describe('helpers', () => {
+  it('nullAnnotate gives tokens with empty glosses', () => {
+    expect(nullAnnotate(cues, 'es')[1]?.tokens.map((t) => [t.lemma, t.gloss])).toEqual([
+      ['tengo', ''],
+      ['un', ''],
+      ['perro', ''],
+    ]);
+  });
+
+  it('parseTranslation requires every line', () => {
+    expect(
+      parseTranslation(
+        {
+          lines: [
+            { i: 0, t: 'a' },
+            { i: 1, t: 'b' },
+          ],
+        },
+        cues,
+      )?.[1]?.text,
+    ).toBe('b');
+    expect(parseTranslation({ lines: [{ i: 0, t: 'a' }] }, cues)).toBeNull();
+  });
+
+  it('hashCues changes with text', () => {
+    expect(hashCues(cues)).toBe(hashCues([...cues]));
+    expect(hashCues(cues)).not.toBe(hashCues([cues[0]!, { ...cues[1]!, text: 'x' }]));
+  });
+});

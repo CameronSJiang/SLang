@@ -6,7 +6,7 @@ export default defineConfig({
   manifest: {
     name: 'SLang',
     description: 'Learn a language from the videos you already watch.',
-    permissions: ['storage', 'activeTab', 'scripting'],
+    permissions: ['storage', 'activeTab', 'scripting', 'offscreen'],
     host_permissions: ['*://*.youtube.com/*'],
   },
   vite: () => ({

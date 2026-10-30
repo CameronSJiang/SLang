@@ -1,14 +1,11 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
-import type { AnnotatedCue, Card, LexEntry } from '../core/types';
+import type { Card, LexEntry } from '../core/types';
+import type { CachedTranscript } from '../llm/annotator';
 
 export const TRANSCRIPT_SCHEMA_VERSION = 1;
 
-export interface TranscriptRow {
-  /** `${site}:${videoId}:${lang}:${schemaVersion}` */
-  key: string;
-  cues: AnnotatedCue[];
-  createdAt: number;
-}
+/** Annotated transcript, keyed `${site}:${videoId}:${lang}:${schemaVersion}`. */
+export type TranscriptRow = CachedTranscript;
 
 export interface ReviewLogRow {
   id?: number;

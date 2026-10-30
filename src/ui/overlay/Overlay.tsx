@@ -1,18 +1,31 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CaptionState } from '../../adapters/types';
+import type { AnnotationProgress } from '../../llm/annotator';
 import { findCueIndex } from '../../core/cueIndex';
 import { CAPTION_POSITION_RANGE, LANGUAGES, type Settings } from '../../core/settings';
-import type { Cue } from '../../core/types';
+import type { AnnotatedCue, Cue } from '../../core/types';
 
 export interface OverlayProps {
   state: CaptionState;
   video: HTMLVideoElement | null;
   settings: Pick<
     Settings,
-    'targetLang' | 'captionFontSize' | 'captionHighContrast' | 'captionPosition'
+    'targetLang' | 'nativeLang' | 'captionFontSize' | 'captionHighContrast' | 'captionPosition'
   >;
   /** Called once when a drag ends, with the new position (% from bottom). */
   onMove(position: number): void;
+  /** Annotations by cue id (M2). */
+  annotations?: ReadonlyMap<string, AnnotatedCue>;
+  ai?: AnnotationProgress | null;
+}
+
+function aiMessage(ai: AnnotationProgress | null | undefined): string | null {
+  if (!ai) return null;
+  if (ai.error) return `Translations unavailable: ${ai.error}. Check SLang settings.`;
+  if (ai.provider === 'null')
+    return 'Translations are off. Set up an AI provider in SLang settings.';
+  if (!ai.finished && ai.total) return `Translating… ${Math.floor((ai.done / ai.total) * 100)}%`;
+  return null;
 }
 
 /** Index of the cue under the playhead, updated every presented frame. */
@@ -47,11 +60,12 @@ const clampPos = (p: number) =>
 
 const stop = (e: Event) => e.stopPropagation();
 
-export function Overlay({ state, video, settings, onMove }: OverlayProps) {
+export function Overlay({ state, video, settings, onMove, annotations, ai }: OverlayProps) {
   const index = useActiveCue(video, state.cues);
   const rootRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<{ startY: number; startPos: number; pos: number } | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
+  const [aiDismissed, setAiDismissed] = useState<string | null>(null);
 
   if (state.ad) return null;
 
@@ -59,6 +73,11 @@ export function Overlay({ state, video, settings, onMove }: OverlayProps) {
   const position = drag?.pos ?? settings.captionPosition;
   const langName = LANGUAGES[settings.targetLang];
   const showNotice = state.status === 'no-target' || state.status === 'no-captions';
+  const l1 = cue ? annotations?.get(cue.id)?.l1 : undefined;
+  const aiText = aiMessage(ai);
+  // Progress clears itself; problems can be dismissed per video.
+  const showAi =
+    !!aiText && (!ai?.error && ai?.provider !== 'null' ? true : aiDismissed !== state.videoId);
 
   const onPointerDown = (e: PointerEvent) => {
     e.stopPropagation();
@@ -93,6 +112,16 @@ export function Overlay({ state, video, settings, onMove }: OverlayProps) {
           </button>
         </div>
       )}
+      {showAi && (
+        <div class="ai" onClick={stop} onMouseDown={stop} onDblClick={stop}>
+          {aiText}
+          {(ai?.error || ai?.provider === 'null') && (
+            <button aria-label="Dismiss" onClick={() => setAiDismissed(state.videoId)}>
+              ×
+            </button>
+          )}
+        </div>
+      )}
       {cue && (
         <div
           class={`box${drag ? ' dragging' : ''}`}
@@ -108,6 +137,11 @@ export function Overlay({ state, video, settings, onMove }: OverlayProps) {
           onDblClick={stop}
         >
           {cue.text}
+          {l1 && (
+            <div class="l1" lang={settings.nativeLang}>
+              {l1}
+            </div>
+          )}
         </div>
       )}
     </div>

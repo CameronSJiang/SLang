@@ -11,6 +11,10 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
+    files: ['tests/**/*.ts'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
+  },
+  {
     // src/core must stay portable: no extension or DOM APIs.
     files: ['src/core/**/*.ts'],
     languageOptions: { globals: {} },

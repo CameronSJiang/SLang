@@ -36,6 +36,31 @@ export const overlayCss = `
   font-weight: 600;
   outline: 2px solid #fff;
 }
+.l1 {
+  display: none;
+  margin-top: 0.2em;
+  font-size: 0.65em;
+  font-weight: 400;
+  opacity: 0.9;
+}
+/* Rule 1: the full L1 line stays hidden until asked for. */
+.box:hover .l1 { display: block; }
+.ai {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 50%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(8, 8, 8, 0.75);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: auto;
+}
+.ai button { all: unset; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; }
 .notice {
   position: absolute;
   top: 12px;

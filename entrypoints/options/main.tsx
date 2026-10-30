@@ -11,6 +11,7 @@ import {
   type Settings,
 } from '@/src/core/settings';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
+import { AIPanel } from './AIPanel';
 import './style.css';
 
 const PROVIDER_LABELS: Record<LLMProviderId, string> = {
@@ -193,6 +194,7 @@ function Options() {
           <button onClick={() => setShowKey(!showKey)}>{showKey ? 'Hide' : 'Show'}</button>
         </div>
         <p class="muted">Stored only on this device. Never synced or logged.</p>
+        <AIPanel s={s} />
       </section>
 
       <p class="status" role="status">
