@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import type { Settings } from '@/src/core/settings';
+import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { AnthropicProvider } from '@/src/llm/anthropic';
 import {
   chromeAIStatus,
@@ -52,7 +52,7 @@ export function AIPanel({ s }: { s: Settings }) {
     try {
       await setupChromeAI(s.targetLang, s.nativeLang, (what, loaded) =>
         setDownload(
-          `${what === 'prompt' ? 'AI model' : 'Translator'}: ${Math.round(loaded * 100)}%`,
+          `${{ prompt: 'AI model', translator: 'Translator', dubTranslator: 'Dub translator' }[what]}: ${Math.round(loaded * 100)}%`,
         ),
       );
       setDownload('Done');
@@ -74,7 +74,7 @@ export function AIPanel({ s }: { s: Settings }) {
   const needsDownload =
     chrome &&
     (['downloadable', 'downloading'] as const).some(
-      (a) => a === chrome.prompt || a === chrome.translator,
+      (a) => a === chrome.prompt || a === chrome.translator || a === chrome.dubTranslator,
     );
 
   return (
@@ -85,6 +85,9 @@ export function AIPanel({ s }: { s: Settings }) {
           Word meanings: {STATUS_TEXT[chrome.prompt]}
           <br />
           Line translation: {STATUS_TEXT[chrome.translator]}
+          <br />
+          Dub translation ({LANGUAGES[s.nativeLang]} → {LANGUAGES[s.targetLang]}):{' '}
+          {STATUS_TEXT[chrome.dubTranslator]}
         </p>
       ) : (
         <p class="muted">Checking…</p>

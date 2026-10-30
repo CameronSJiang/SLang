@@ -66,8 +66,8 @@ Dexie tables: `transcripts` (key: `${site}:${videoId}:${lang}:${schemaVersion}`)
   - audio: `original` | `dub` (L2 voice, original ducked)
   - captions: `off` | `l2` (glossed) | `l2+source` (glossed L2 plus the original line, small, below)
   - presets: **Captions** (original + l2), **Dub** (dub + off), **Dub + captions** (dub + l2), **Bilingual** (dub + l2+source), **Auto** (L2 track exists → Captions, else Dub + captions; default).
-- Translate source cues → L2 with `translateCues`, playhead-first, ~30-cue chunks like M2; cache in `transcripts` with key `${site}:${videoId}:${srcLang}>${l2}:dub:${schemaVersion}`. Dubbed lines then go through the same annotate/gloss pipeline, so saving words, the learner model, and reviews work identically in Dub mode.
-- TTS: `speechSynthesis` with an L2 voice (voice picker in options). Per cue, set rate so the line fits the cue duration (clamp 0.8–1.6×); if it still overruns, pause the video until the utterance ends, then resume.
+- If the video has an L2 track but people speak another language (auto-generated track language ≠ L2), dub straight from the L2 track. Otherwise translate source cues → L2 with `translateCues`, playhead-first, ~30-cue chunks like M2; cache in `transcripts` with key `${site}:${videoId}:${srcLang}>${l2}:dub:${schemaVersion}`. Dubbed lines then go through the same annotate/gloss pipeline, so saving words, the learner model, and reviews work identically in Dub mode.
+- TTS: `speechSynthesis` with an L2 voice (voice picker in options). Per cue, set rate so the line fits the cue duration (speed up only, 1.0–1.6×; slowing a line to fill silence sounds unnatural); if it still overruns, pause the video until the utterance ends, then resume.
 - Ducking: lower `video.volume` to ~15% of the user's level while speaking, restore after; respect mute.
 - Seek, pause, playback-rate change, ads and SPA navigation cancel the current utterance and resync to the playhead.
 - Done when: an English YouTube video plays with Spanish voice starting within ~0.5s of each cue, original ducked; switching presets mid-video works without reload; second load makes zero translation calls.

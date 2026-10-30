@@ -3,6 +3,7 @@ import type { CaptionState } from '../../adapters/types';
 import type { AnnotationProgress } from '../../llm/annotator';
 import { findCueIndex } from '../../core/cueIndex';
 import { selectGlosses, type WordInfo } from '../../core/glossPolicy';
+import type { CaptionMode } from '../../core/playback';
 import { CAPTION_POSITION_RANGE, LANGUAGES, type Settings } from '../../core/settings';
 import type { AnnotatedCue, Cue, Token } from '../../core/types';
 import { Caption } from './Caption';
@@ -35,6 +36,12 @@ export interface OverlayProps {
   onWord?(action: WordAction, cue: AnnotatedCue, token: Token): void;
   /** A cue was watched for ≥1.5s without a lookup (implicit "probably known" signal). */
   onExposure?(cue: AnnotatedCue): void;
+  /** Which caption layers to show (M2.5). Default 'l2'. */
+  captions?: CaptionMode;
+  /** Original-language line for a cue, shown under it in 'l2+source' mode. */
+  sourceFor?: (cue: Cue) => string | undefined;
+  /** Extra status messages (e.g. dub mode), shown with the AI status. */
+  messages?: readonly string[];
 }
 
 interface Popover {
@@ -103,6 +110,9 @@ export function Overlay({
   wordInfo,
   onWord,
   onExposure,
+  captions = 'l2',
+  sourceFor,
+  messages = [],
 }: OverlayProps) {
   const index = useActiveCue(video, state.cues);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -239,17 +249,24 @@ export function Overlay({
           </button>
         </div>
       )}
-      {showAi && (
-        <div class="ai" onClick={stop} onMouseDown={stop} onDblClick={stop}>
-          {aiText}
-          {(ai?.error || ai?.provider === 'null') && (
-            <button aria-label="Dismiss" onClick={() => setAiDismissed(state.videoId)}>
-              ×
-            </button>
-          )}
-        </div>
-      )}
-      {cue && (
+      <div class="pills">
+        {showAi && (
+          <div class="ai" onClick={stop} onMouseDown={stop} onDblClick={stop}>
+            {aiText}
+            {(ai?.error || ai?.provider === 'null') && (
+              <button aria-label="Dismiss" onClick={() => setAiDismissed(state.videoId)}>
+                ×
+              </button>
+            )}
+          </div>
+        )}
+        {messages.map((m) => (
+          <div key={m} class="ai" onClick={stop} onMouseDown={stop} onDblClick={stop}>
+            {m}
+          </div>
+        ))}
+      </div>
+      {cue && captions !== 'off' && (
         <div
           class={`box${dragPos !== null ? ' dragging' : ''}`}
           lang={state.lang ?? settings.targetLang}
@@ -263,6 +280,7 @@ export function Overlay({
           onDblClick={stop}
         >
           {ann ? <Caption cue={ann} glossed={glossed} info={info} active={pop?.token} /> : cue.text}
+          {captions === 'l2+source' && sourceFor?.(cue) && <div class="src">{sourceFor(cue)}</div>}
           {l1 && (
             <div class="l1" lang={settings.nativeLang}>
               {l1}

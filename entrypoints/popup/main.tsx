@@ -1,7 +1,9 @@
 import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { browser } from 'wxt/browser';
+import { PLAYBACK_PRESETS, type PlaybackPreset } from '@/src/core/playback';
 import type { Settings } from '@/src/core/settings';
+import { PRESET_SHORT } from '@/src/ui/presets';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 
 const isYouTube = (url?: string) => !!url && /^https?:\/\/([^/]+\.)?youtube\.com\//.test(url);
@@ -53,6 +55,25 @@ function Popup() {
             }
           />
           Captions overlay
+        </label>
+      )}
+      {settings && (
+        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '8px' }}>
+          Mode
+          <select
+            value={settings.playbackPreset}
+            onChange={(e) =>
+              void saveSettings({
+                playbackPreset: e.currentTarget.value as PlaybackPreset,
+              }).then(setSettings)
+            }
+          >
+            {PLAYBACK_PRESETS.map((p) => (
+              <option key={p} value={p}>
+                {PRESET_SHORT[p]}
+              </option>
+            ))}
+          </select>
         </label>
       )}
       <p style={{ margin: '10px 0' }}>

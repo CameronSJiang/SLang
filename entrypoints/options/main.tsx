@@ -12,6 +12,7 @@ import {
 } from '@/src/core/settings';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 import { AIPanel } from './AIPanel';
+import { DubPanel } from './DubPanel';
 import { PlacementTest } from './PlacementTest';
 import './style.css';
 
@@ -89,6 +90,8 @@ function Options() {
           <p class="warn">Target and native language are the same.</p>
         )}
       </section>
+
+      <DubPanel s={s} update={(p) => void update(p)} />
 
       <section>
         <span class="label">Captions</span>

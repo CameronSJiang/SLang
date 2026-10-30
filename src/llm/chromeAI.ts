@@ -57,6 +57,15 @@ function lmOptions(lang: string, nativeLang: string, system?: string): LMOptions
 export interface ChromeAIStatus {
   prompt: AIAvailability | 'missing';
   translator: AIAvailability | 'missing';
+  /** Native → target translator, used by dub mode. */
+  dubTranslator: AIAvailability | 'missing';
+}
+
+async function translatorStatus(from: string, to: string): Promise<AIAvailability | 'missing'> {
+  if (!ai.Translator) return 'missing';
+  return ai.Translator.availability({ sourceLanguage: base(from), targetLanguage: base(to) }).catch(
+    () => 'unavailable' as const,
+  );
 }
 
 export async function chromeAIStatus(lang: string, nativeLang: string): Promise<ChromeAIStatus> {
@@ -65,20 +74,18 @@ export async function chromeAIStatus(lang: string, nativeLang: string): Promise<
         () => 'unavailable' as const,
       )
     : 'missing';
-  const translator = ai.Translator
-    ? await ai.Translator.availability({
-        sourceLanguage: base(lang),
-        targetLanguage: base(nativeLang),
-      }).catch(() => 'unavailable' as const)
-    : 'missing';
-  return { prompt, translator };
+  const [translator, dubTranslator] = await Promise.all([
+    translatorStatus(lang, nativeLang),
+    translatorStatus(nativeLang, lang),
+  ]);
+  return { prompt, translator, dubTranslator };
 }
 
 /** Start (or finish) the model downloads. Call from a click handler. */
 export async function setupChromeAI(
   lang: string,
   nativeLang: string,
-  onProgress: (what: 'prompt' | 'translator', loaded: number) => void,
+  onProgress: (what: 'prompt' | 'translator' | 'dubTranslator', loaded: number) => void,
 ): Promise<void> {
   const status = await chromeAIStatus(lang, nativeLang);
   const tasks: Promise<unknown>[] = [];
@@ -101,6 +108,19 @@ export async function setupChromeAI(
         targetLanguage: base(nativeLang),
         monitor: (m) =>
           m.addEventListener('downloadprogress', (e) => onProgress('translator', e.loaded)),
+      }).then((t) => t.destroy()),
+    );
+  }
+  if (
+    ai.Translator &&
+    (status.dubTranslator === 'downloadable' || status.dubTranslator === 'downloading')
+  ) {
+    tasks.push(
+      ai.Translator.create({
+        sourceLanguage: base(nativeLang),
+        targetLanguage: base(lang),
+        monitor: (m) =>
+          m.addEventListener('downloadprogress', (e) => onProgress('dubTranslator', e.loaded)),
       }).then((t) => t.destroy()),
     );
   }

@@ -71,6 +71,24 @@ export const overlayCss = `
   font-size: 13px;
   pointer-events: auto;
 }
+/* Status pills stack in the top-right corner. */
+.pills {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 50%;
+}
+.pills .ai { position: static; max-width: none; }
+.src {
+  margin-top: 0.15em;
+  font-size: 0.6em;
+  font-weight: 400;
+  opacity: 0.85;
+}
 .ai button { all: unset; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; }
 /* Words: clickable; glossed ones get ruby text and a state-colored underline. */
 .w { cursor: pointer; border-radius: 3px; }

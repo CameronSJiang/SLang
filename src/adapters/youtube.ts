@@ -85,6 +85,7 @@ export function startYouTubeAdapter(
     if (m.type === 'tracks') {
       if (m.videoId !== state.videoId) return;
       tracks = m.tracks;
+      emit({ tracks });
       recompute();
       return;
     }

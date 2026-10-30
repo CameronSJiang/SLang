@@ -20,6 +20,8 @@ describe('normalizeSettings', () => {
       captionFontSize: 30,
       captionHighContrast: true,
       captionPosition: 40,
+      playbackPreset: 'bilingual',
+      dubVoice: 'Paulina',
     });
     expect(s).toEqual({
       targetLang: 'ko',
@@ -33,6 +35,8 @@ describe('normalizeSettings', () => {
       captionFontSize: 30,
       captionHighContrast: true,
       captionPosition: 40,
+      playbackPreset: 'bilingual',
+      dubVoice: 'Paulina',
     });
   });
 

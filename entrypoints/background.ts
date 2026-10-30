@@ -5,6 +5,7 @@ import { dexieTranscriptCache } from '@/src/storage/transcripts';
 import { applyLexEvents, getWordInfo, saveCard } from '@/src/storage/lexicon';
 import type { LexRequest, LexResponse } from '@/src/storage/lexMessages';
 import { AnnotationJob } from '@/src/llm/annotator';
+import { TranslationJob } from '@/src/llm/translationJob';
 import { AnthropicProvider } from '@/src/llm/anthropic';
 import { ANNOTATE_PORT, type AnnotateEvent, type AnnotateRequest } from '@/src/llm/messages';
 import { nullProvider } from '@/src/llm/null';
@@ -34,6 +35,17 @@ function post(port: Port, e: AnnotateEvent) {
   } catch {
     // port closed
   }
+}
+
+/** Providers that might translate, in the user's order (Chrome AI's Translator needs no Prompt model). */
+function translators(s: Settings): LLMProvider[] {
+  return s.providers.flatMap((id): LLMProvider[] =>
+    id === 'chrome-ai'
+      ? [offscreenChromeAI]
+      : id === 'anthropic' && s.anthropicApiKey
+        ? [new AnthropicProvider(s.anthropicApiKey)]
+        : [],
+  );
 }
 
 async function handleLex(req: LexRequest): Promise<LexResponse> {
@@ -66,7 +78,7 @@ export default defineBackground(() => {
   });
 
   // One running job per transcript; several tabs can watch the same one.
-  const jobs = new Map<string, { job: AnnotationJob; ports: Set<Port> }>();
+  const jobs = new Map<string, { job: AnnotationJob | TranslationJob; ports: Set<Port> }>();
 
   browser.runtime.onConnect.addListener((port) => {
     if (port.name !== ANNOTATE_PORT) return;
@@ -80,19 +92,45 @@ export default defineBackground(() => {
       }
       const settings = await loadSettings();
       // Glosses are in the native language, so it's part of the key.
-      key = transcriptKey(msg.site, msg.videoId, `${msg.lang}>${settings.nativeLang}`);
+      key =
+        msg.type === 'translate'
+          ? transcriptKey(msg.site, msg.videoId, `${msg.from}>${msg.to}:dub`)
+          : transcriptKey(msg.site, msg.videoId, `${msg.lang}>${settings.nativeLang}`);
       const existing = jobs.get(key);
       if (existing) {
         // Join the running job: replay what's cached so far, then get live updates.
         existing.ports.add(port);
         const row = await dexieTranscriptCache.get(key);
         const ready = row?.cues.filter((c) => c !== null) ?? [];
-        if (ready.length) send({ type: 'chunk', cues: ready });
+        if (ready.length) {
+          send(
+            msg.type === 'translate'
+              ? { type: 'translated', cues: ready }
+              : { type: 'chunk', cues: ready },
+          );
+        }
         existing.job.setPlayhead(msg.playhead);
         return;
       }
       const ports = new Set([port]);
       const jobKey = key;
+      if (msg.type === 'translate') {
+        const tjob = new TranslationJob({
+          key: jobKey,
+          cues: msg.cues,
+          from: msg.from,
+          to: msg.to,
+          providers: translators(settings),
+          cache: dexieTranscriptCache,
+          onChunk: (cues) => ports.forEach((p) => post(p, { type: 'translated', cues })),
+          onProgress: (progress) =>
+            ports.forEach((p) => post(p, { type: 'translateProgress', progress })),
+        });
+        tjob.setPlayhead(msg.playhead);
+        jobs.set(jobKey, { job: tjob, ports });
+        void tjob.run().finally(() => jobs.delete(jobKey));
+        return;
+      }
       const provider = await pickProvider(settings);
       const job = new AnnotationJob({
         key: jobKey,

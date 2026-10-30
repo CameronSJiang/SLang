@@ -1,27 +1,30 @@
 # Progress
 
-## M0–M2 ✅
+## M0–M3 ✅
 
-Scaffold; YouTube json3 capture + track forcing (clears YouTube auto-translate), DOM fallback, Shadow DOM
-overlay; LLM annotation (Null / Anthropic `claude-haiku-5-5` / Chrome AI in offscreen doc), Translator-first
-line pass, IndexedDB cache (0 calls on reload), hover → L1 line. Deps: `@anthropic-ai/sdk`; perm `offscreen`.
+Scaffold; YouTube caption capture + overlay; LLM annotation (Null / Anthropic `claude-haiku-5-5` / Chrome AI)
+with Translator-first line pass and IndexedDB cache; learner model (frequency prior + signals), gloss policy,
+ruby glosses, word popover (Save/Known/Ignore, TTS), placement test. Freq lists: wordfreq, CC BY-SA 4.0.
 
-## M3 — Learner model + adaptive glossing ✅
+## M2.5 — Dub mode ✅
 
 **Done**
 
-- `public/freq/<lang>.json.gz` (top 20k, wordfreq 3.1.1, CC BY-SA 4.0 — see `ATTRIBUTION.md`,
-  `scripts/gen-freq.py`). `core/learner.ts` (logistic prior over log-rank vs level/test vocab; lookup ×0.35,
-  known = 1, ignore, save → custom; exposure +8% of gap, cap 3/lemma/session), `core/glossPolicy.ts`
-  (threshold + cap by density, custom first, then mid-frequency; skips PROPN/NUM), `core/placement.ts`.
-- Background owns the lexicon/cards (Dexie); content uses `LexiconClient` over runtime messages.
-- Overlay: ruby glosses, underline by state, click word → popover (lemma, POS, gloss, TTS, Save · Known ·
-  Ignore; pauses video), exposures after ≥1.5s on screen. Save creates a ts-fsrs Card (sentence, videoId, t).
-- Options: 45-item yes/no level test (20% pseudo-words) → level + `vocabSize`. Chrome AI skips top-300 words.
-- 65 unit tests; headless e2e 13/13 for M3 (A1 vs C1 density, popover, save, exposure, test) + M1/M2 suites.
+- `core/playback.ts`: presets (Auto / Captions / Dub / Dub + captions / Bilingual) → audio + caption layers;
+  spoken language from the auto-generated track; `pickSource` (native language, then human-made).
+- `llm/translationJob.ts`: source → L2, playhead-first, cached `site:video:src>l2:dub:1`; tries providers in
+  order (Chrome Translator, then Anthropic). Dubbed lines then go through annotation (`<video>~dub`).
+- `ui/dub/engine.ts`: speechSynthesis per cue, rate to fit (≤1.6×), holds the video on overrun, ducks to 15%,
+  resyncs on seek/pause/rate/ads. Popup mode switcher; options: default mode, voice picker + test.
+- 85 unit tests (engine with fake video/synth); headless e2e 13/13 for dub + earlier suites.
 
-**Decisions / known issues**
+**Decisions**
 
-- Hover L1 floats above the caption; popover pauses playback. Nano lemmas are weak; level test es-only.
+- Only speed lines up (1.0–1.6×), never slow down (spec said 0.8–1.6). English-audio videos with Spanish
+  subtitles are dubbed from that track, no translation. Online ("Google") voices only if chosen (privacy).
 
-**Next:** M2.5 — Dub mode, then M4 — review page.
+**Known issues**
+
+- Headless Chrome has no voices, so real speech/ducking is only unit-tested. One voice for all speakers.
+
+**Next:** M4 — review page with clip context.

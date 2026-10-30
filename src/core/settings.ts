@@ -15,6 +15,8 @@ export type LLMProviderId = (typeof LLM_PROVIDERS)[number];
 export const GLOSS_DENSITIES = ['auto', 'low', 'med', 'high'] as const;
 export type GlossDensity = (typeof GLOSS_DENSITIES)[number];
 
+import { PLAYBACK_PRESETS, type PlaybackPreset } from './playback';
+
 export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
 export type Level = (typeof LEVELS)[number];
 
@@ -35,6 +37,10 @@ export interface Settings {
   captionHighContrast: boolean;
   /** Caption box distance from the bottom of the player, in % of its height. */
   captionPosition: number;
+  /** What to hear and read (M2.5). */
+  playbackPreset: PlaybackPreset;
+  /** speechSynthesis voiceURI for dubbing; null = best on-device voice. */
+  dubVoice: string | null;
 }
 
 export const CAPTION_FONT_RANGE = [14, 56] as const;
@@ -52,6 +58,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   captionFontSize: 26,
   captionHighContrast: false,
   captionPosition: 10,
+  playbackPreset: 'auto',
+  dubVoice: null,
 });
 
 function isOneOf<T extends string>(list: readonly T[], v: unknown): v is T {
@@ -95,6 +103,10 @@ export function normalizeSettings(raw: unknown): Settings {
     captionHighContrast:
       typeof r.captionHighContrast === 'boolean' ? r.captionHighContrast : d.captionHighContrast,
     captionPosition: clampNum(r.captionPosition, CAPTION_POSITION_RANGE, d.captionPosition),
+    playbackPreset: isOneOf(PLAYBACK_PRESETS, r.playbackPreset)
+      ? r.playbackPreset
+      : d.playbackPreset,
+    dubVoice: typeof r.dubVoice === 'string' && r.dubVoice ? r.dubVoice : null,
   };
 }
 

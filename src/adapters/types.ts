@@ -1,3 +1,4 @@
+import type { TrackInfo } from '../core/lang';
 import type { Cue } from '../core/types';
 
 /** What a caption adapter reports to the overlay. */
@@ -17,8 +18,10 @@ export interface CaptionState {
   status: 'idle' | 'waiting' | 'ready' | 'no-target' | 'no-captions';
   /** An ad is playing; hide the overlay. */
   ad: boolean;
-  /** Captured non-target tracks, keyed `${lang}:${kind}` — kept for dub mode (M2.5). */
+  /** Captured non-target tracks, keyed `${lang}:${kind}` — the text dub mode translates. */
   sources: ReadonlyMap<string, Cue[]>;
+  /** Caption tracks the video offers (null until known). An `asr` track tells the spoken language. */
+  tracks: readonly TrackInfo[] | null;
 }
 
 export const IDLE_STATE: CaptionState = {
@@ -29,4 +32,5 @@ export const IDLE_STATE: CaptionState = {
   status: 'idle',
   ad: false,
   sources: new Map(),
+  tracks: null,
 };
