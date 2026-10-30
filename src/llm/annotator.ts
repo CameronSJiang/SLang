@@ -136,6 +136,7 @@ export class AnnotationJob {
           nativeLang: this.o.nativeLang,
           context: cues.slice(c.contextStart, c.start),
           skipLineTranslation: slice.every((_, k) => !!row.cues[c.start + k]?.l1),
+          ...(this.provider.commonCutoff ? { commonCutoff: this.provider.commonCutoff } : {}),
         };
         const { result, by } = await this.annotateChunk(slice, ctx);
         result.forEach((a, k) => {

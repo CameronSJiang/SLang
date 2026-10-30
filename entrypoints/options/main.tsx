@@ -12,6 +12,7 @@ import {
 } from '@/src/core/settings';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 import { AIPanel } from './AIPanel';
+import { PlacementTest } from './PlacementTest';
 import './style.css';
 
 const PROVIDER_LABELS: Record<LLMProviderId, string> = {
@@ -133,7 +134,10 @@ function Options() {
         <select
           id="level"
           value={s.level}
-          onChange={(e) => void update({ level: e.currentTarget.value as Settings['level'] })}
+          // Picking a level by hand replaces the test's estimate.
+          onChange={(e) =>
+            void update({ level: e.currentTarget.value as Settings['level'], vocabSize: null })
+          }
         >
           {LEVELS.map((l) => (
             <option key={l} value={l}>
@@ -141,6 +145,7 @@ function Options() {
             </option>
           ))}
         </select>
+        <PlacementTest s={s} onDone={(r) => void update({ level: r.level, vocabSize: r.vocab })} />
 
         <span class="label">Gloss density</span>
         <div class="row" role="radiogroup" aria-label="Gloss density">

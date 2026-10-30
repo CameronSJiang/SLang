@@ -49,3 +49,8 @@ label.inline {
   min-height: 1.2em;
   color: #15803d;
 }
+.placement-word {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 12px 0;
+}

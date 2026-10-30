@@ -111,6 +111,8 @@ export class ChromeAIProvider implements LLMProvider {
   readonly id = 'chrome-ai' as const;
   /** Gemini Nano is small and slow; keep prompts short. */
   readonly chunkSize = 6;
+  /** Top-300 words cover most running text and nearly every learner knows them. */
+  readonly commonCutoff = 300;
   private sessions = new Map<string, Promise<LMSession>>();
   private translators = new Map<string, Promise<TranslatorInstance | null>>();
 

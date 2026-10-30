@@ -168,3 +168,28 @@ describe('helpers', () => {
     expect(hashCues(cues)).not.toBe(hashCues([cues[0]!, { ...cues[1]!, text: 'x' }]));
   });
 });
+
+describe('skipping common words', () => {
+  const skip = (w: string) => ['a', 'un'].includes(w.toLowerCase());
+  it('leaves common words out of the prompt and keeps them as bare tokens', () => {
+    const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, skip });
+    expect(p.user).toContain('words: Hola · todos');
+    expect(p.user).toContain('words: Tengo · perro');
+    const out = parseAnnotation(
+      {
+        lines: [
+          { i: 0, t: 'x', w: ['Hola|hola|INTJ|hi', 'todos|todo|PRON|all'] },
+          { i: 1, t: 'y', w: ['Tengo|tener|VERB|I have', 'perro|perro|NOUN|dog'] },
+        ],
+      },
+      cues,
+      'es',
+      skip,
+    );
+    expect(out?.[1]?.tokens.map((t) => [t.surface, t.gloss])).toEqual([
+      ['Tengo', 'I have'],
+      ['un', ''],
+      ['perro', 'dog'],
+    ]);
+  });
+});

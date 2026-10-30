@@ -22,7 +22,11 @@ export interface AnnotationPrompt {
   schema: Record<string, unknown>;
 }
 
+/** Words the model doesn't need to annotate (very common words); they keep bare tokens. */
+export type SkipWord = (surface: string) => boolean;
+
 export interface PromptOptions {
+  skip?: SkipWord;
   /** Language names, e.g. "Spanish" / "English". */
   langName: string;
   nativeName: string;
@@ -110,8 +114,10 @@ export function buildAnnotationPrompt(
     : '';
   const lines = cues
     .map((c, i) => {
-      const words = tokenize(c.text, lang).map((w) => w.surface);
-      return `[${i}] ${c.text}\nwords: ${words.join(' · ')}`;
+      const words = tokenize(c.text, lang)
+        .map((w) => w.surface)
+        .filter((w) => !opts.skip?.(w));
+      return `[${i}] ${c.text}\nwords: ${words.length ? words.join(' · ') : '(none)'}`;
     })
     .join('\n');
   return {
@@ -194,6 +200,7 @@ export function parseAnnotation(
   raw: unknown,
   cues: readonly Cue[],
   lang: string,
+  skip?: SkipWord,
 ): AnnotatedCue[] | null {
   const lines = (raw as { lines?: unknown } | null)?.lines;
   if (!Array.isArray(lines)) return null;
@@ -215,15 +222,21 @@ export function parseAnnotation(
   let hits = 0;
   const out = cues.map((cue, i) => {
     const spans = tokenize(cue.text, lang);
+    const asked = spans.filter((w) => !skip?.(w.surface));
     const line = perLine ? byIndex.get(i) : undefined;
     const aligned = perLine
-      ? alignWords(spans, entriesOf(line?.w))
-      : alignWords(spans, flat, cursor);
+      ? alignWords(asked, entriesOf(line?.w))
+      : alignWords(asked, flat, cursor);
     cursor = aligned.next;
-    words += spans.length;
+    words += asked.length;
     hits += aligned.hits;
+    // Merge back: skipped words keep bare tokens, in original order.
+    let k = 0;
+    const tokens = spans.map((w) =>
+      skip?.(w.surface) ? bareToken(w) : (aligned.tokens[k++] as Token),
+    );
     const l1 = typeof line?.t === 'string' && line.t.trim() ? line.t.trim() : undefined;
-    return { ...cue, tokens: aligned.tokens, ...(l1 ? { l1 } : {}) };
+    return { ...cue, tokens, ...(l1 ? { l1 } : {}) };
   });
   return words === 0 || hits / words >= MIN_COVERAGE ? out : null;
 }

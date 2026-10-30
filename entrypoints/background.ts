@@ -2,6 +2,8 @@ import { browser } from 'wxt/browser';
 import { transcriptKey } from '@/src/storage/db';
 import { loadSettings } from '@/src/storage/settings';
 import { dexieTranscriptCache } from '@/src/storage/transcripts';
+import { applyLexEvents, getWordInfo, saveCard } from '@/src/storage/lexicon';
+import type { LexRequest, LexResponse } from '@/src/storage/lexMessages';
 import { AnnotationJob } from '@/src/llm/annotator';
 import { AnthropicProvider } from '@/src/llm/anthropic';
 import { ANNOTATE_PORT, type AnnotateEvent, type AnnotateRequest } from '@/src/llm/messages';
@@ -34,7 +36,35 @@ function post(port: Port, e: AnnotateEvent) {
   }
 }
 
+async function handleLex(req: LexRequest): Promise<LexResponse> {
+  const s = await loadSettings();
+  switch (req.op) {
+    case 'lex.get':
+      return { ok: true, info: await getWordInfo(req.lang, req.lemmas, s) };
+    case 'lex.events':
+      return { ok: true, info: await applyLexEvents(req.lang, req.events, s) };
+    case 'card.save':
+      await saveCard(req.lang, req.lemma, req.card);
+      return {
+        ok: true,
+        info: await applyLexEvents(req.lang, [{ lemma: req.lemma, event: 'save' }], s),
+      };
+  }
+}
+
 export default defineBackground(() => {
+  browser.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
+    const req = msg as LexRequest | undefined;
+    if (req?.target !== 'background') return false;
+    handleLex(req).then(sendResponse, (e: unknown) =>
+      sendResponse({
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+      } satisfies LexResponse),
+    );
+    return true; // async response
+  });
+
   // One running job per transcript; several tabs can watch the same one.
   const jobs = new Map<string, { job: AnnotationJob; ports: Set<Port> }>();
 

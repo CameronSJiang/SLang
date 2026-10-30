@@ -9,12 +9,19 @@ export interface AnnotateContext {
   context: Cue[];
   /** Line translations already exist (from translateLines); only annotate words. */
   skipLineTranslation?: boolean;
+  /**
+   * Don't ask the model about words ranked at or above this in the frequency
+   * list (they're known to almost everyone). Speeds up slow on-device models.
+   */
+  commonCutoff?: number;
 }
 
 export interface LLMProvider {
   readonly id: LLMProviderId;
   /** Cues per annotate() call this provider handles well. */
   readonly chunkSize: number;
+  /** Skip asking about the N most common words (slow models); see AnnotateContext.commonCutoff. */
+  readonly commonCutoff?: number;
   available(): Promise<boolean>;
   /** Throws on failure; the annotator retries once, then falls back to Null. */
   annotate(cues: Cue[], ctx: AnnotateContext): Promise<AnnotatedCue[]>;

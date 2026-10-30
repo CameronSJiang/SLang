@@ -26,6 +26,8 @@ export interface Settings {
   anthropicApiKey: string;
   glossDensity: GlossDensity;
   level: Level;
+  /** Vocabulary size from the placement test; overrides the level's default when set. */
+  vocabSize: number | null;
   /** Show our caption overlay on supported players. */
   overlayEnabled: boolean;
   /** Caption font size in px. */
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   anthropicApiKey: '',
   glossDensity: 'auto',
   level: 'A2',
+  vocabSize: null,
   overlayEnabled: true,
   captionFontSize: 26,
   captionHighContrast: false,
@@ -83,6 +86,10 @@ export function normalizeSettings(raw: unknown): Settings {
     anthropicApiKey: typeof r.anthropicApiKey === 'string' ? r.anthropicApiKey.trim() : '',
     glossDensity: isOneOf(GLOSS_DENSITIES, r.glossDensity) ? r.glossDensity : d.glossDensity,
     level: isOneOf(LEVELS, r.level) ? r.level : d.level,
+    vocabSize:
+      typeof r.vocabSize === 'number' && Number.isFinite(r.vocabSize) && r.vocabSize > 0
+        ? Math.round(Math.min(r.vocabSize, 50000))
+        : null,
     overlayEnabled: typeof r.overlayEnabled === 'boolean' ? r.overlayEnabled : d.overlayEnabled,
     captionFontSize: Math.round(clampNum(r.captionFontSize, CAPTION_FONT_RANGE, d.captionFontSize)),
     captionHighContrast:

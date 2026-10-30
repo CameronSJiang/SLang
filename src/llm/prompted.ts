@@ -2,12 +2,14 @@
 import {
   buildAnnotationPrompt,
   type EntryStyle,
+  type SkipWord,
   parseAnnotation,
   parseTranslation,
   translationSchema,
 } from '../core/annotation';
 import { LANGUAGES } from '../core/settings';
 import type { AnnotatedCue, Cue } from '../core/types';
+import { loadFreq } from '../storage/freq';
 import { InvalidResponseError, type AnnotateContext } from './types';
 
 /** Ask a model for JSON matching `schema`; resolves to the parsed value. */
@@ -27,20 +29,30 @@ export async function annotateWithJson(
   withLineTranslation: boolean,
   style: EntryStyle = 'compact',
 ): Promise<AnnotatedCue[]> {
+  const skip = await commonWords(ctx);
   const p = buildAnnotationPrompt(cues, ctx.context, ctx.lang, {
     langName: langName(ctx.lang),
     nativeName: langName(ctx.nativeLang),
     withLineTranslation,
     style,
+    ...(skip ? { skip } : {}),
   });
   const raw = await complete(p.system, p.user, p.schema);
-  const out = parseAnnotation(raw, cues, ctx.lang);
+  const out = parseAnnotation(raw, cues, ctx.lang, skip);
   if (!out) {
     throw new InvalidResponseError(
       `Annotation response failed validation. Model said: ${snippet(raw)}`,
     );
   }
   return out;
+}
+
+async function commonWords(ctx: AnnotateContext): Promise<SkipWord | undefined> {
+  const cutoff = ctx.commonCutoff;
+  if (!cutoff) return undefined;
+  const freq = await loadFreq(ctx.lang);
+  if (!freq) return undefined;
+  return (w) => (freq.rank(w.toLocaleLowerCase()) ?? Infinity) <= cutoff;
 }
 
 /** Start of a model response, for error messages. Caption text only — never secrets. */

@@ -40,6 +40,7 @@ async function call(req: DistOmit<OffscreenRequest, 'target'>): Promise<unknown>
 export const offscreenChromeAI: LLMProvider = {
   id: 'chrome-ai',
   chunkSize: 6,
+  commonCutoff: 300,
   available: async () => {
     try {
       return (await call({ op: 'available' })) === true;
