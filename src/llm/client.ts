@@ -21,14 +21,23 @@ export function requestAnnotation(
     else on.progress(e.progress);
   });
   const send = (m: AnnotateRequest) => {
-    if (open) port.postMessage(m);
+    if (!open) return;
+    try {
+      port.postMessage(m);
+    } catch {
+      open = false; // extension reloaded under this tab
+    }
   };
   send({ type: 'start', ...req });
   return {
     setPlayhead: (t) => send({ type: 'playhead', t }),
     stop: () => {
       open = false;
-      port.disconnect();
+      try {
+        port.disconnect();
+      } catch {
+        // already gone
+      }
     },
   };
 }

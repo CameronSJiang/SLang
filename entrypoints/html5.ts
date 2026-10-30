@@ -1,13 +1,13 @@
 import { findMainVideo, startHtml5Adapter } from '@/src/adapters/html5';
 import { IDLE_STATE } from '@/src/adapters/types';
-import { loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
+import { extensionAlive, loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
 import { mountOverlay } from '@/src/ui/overlay/mount';
 
 // Injected by the popup's "Show captions on this page" (activeTab + scripting).
 export default defineUnlistedScript(async () => {
   const w = window as Window & { __slangHtml5?: boolean };
   const video = findMainVideo();
-  if (w.__slangHtml5 || !video?.parentElement) return;
+  if (w.__slangHtml5 || !video?.parentElement || !extensionAlive()) return;
   w.__slangHtml5 = true;
 
   let settings = await loadSettings();
@@ -33,7 +33,10 @@ export default defineUnlistedScript(async () => {
       state,
       video,
       settings,
-      onMove: (captionPosition) => void saveSettings({ captionPosition }),
+      onMove: (captionPosition) => {
+        // An orphaned script (extension reloaded under an open tab) can't save.
+        if (extensionAlive()) saveSettings({ captionPosition }).catch(() => {});
+      },
     });
 
   const adapter = startHtml5Adapter(video, settings.targetLang, (s) => {

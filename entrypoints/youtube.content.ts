@@ -4,7 +4,7 @@ import type { Settings } from '@/src/core/settings';
 import type { AnnotatedCue, Cue } from '@/src/core/types';
 import type { AnnotationProgress } from '@/src/llm/annotator';
 import { requestAnnotation, type AnnotationClient } from '@/src/llm/client';
-import { loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
+import { extensionAlive, loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
 import { mountOverlay, type OverlayHandle } from '@/src/ui/overlay/mount';
 import { setNativeCaptionsHidden } from '@/src/ui/overlay/nativeCaptions';
 
@@ -18,6 +18,7 @@ const aiSettingsKey = (s: Settings) =>
 export default defineContentScript({
   matches: ['*://*.youtube.com/*'],
   async main(ctx) {
+    if (!extensionAlive()) return;
     let settings = await loadSettings();
     let state: CaptionState = IDLE_STATE;
     let ui: OverlayHandle | null = null;
@@ -48,7 +49,10 @@ export default defineContentScript({
         settings,
         annotations,
         ai,
-        onMove: (captionPosition) => void saveSettings({ captionPosition }),
+        onMove: (captionPosition) => {
+          // An orphaned script (extension reloaded under an open tab) can't save.
+          if (extensionAlive()) saveSettings({ captionPosition }).catch(() => {});
+        },
       });
     };
 
@@ -72,7 +76,7 @@ export default defineContentScript({
           : null;
       if (want === annotating) return;
       stopAnnotation();
-      if (!want || !state.videoId || !state.lang) return;
+      if (!want || !state.videoId || !state.lang || !extensionAlive()) return;
       annotating = want;
       client = requestAnnotation(
         {
@@ -113,6 +117,7 @@ export default defineContentScript({
       draw();
     });
     const playhead = setInterval(() => {
+      if (!extensionAlive()) return;
       const v = video();
       if (client && v) client.setPlayhead(v.currentTime);
     }, PLAYHEAD_EVERY_MS);
