@@ -107,3 +107,41 @@ describe('AnnotationJob', () => {
     expect(again.calls.length).toBe(3);
   });
 });
+
+describe('fast line pass', () => {
+  it('translates all lines first, then words, keeping the line translations', async () => {
+    const cache = new MemCache();
+    const { p, calls } = fakeProvider();
+    const lineCalls: string[][] = [];
+    p.translateLines = async (texts) => {
+      lineCalls.push(texts);
+      return texts.map((t) => `LINE ${t}`);
+    };
+    const events: string[] = [];
+    const job = new AnnotationJob({
+      key: 'yt:v:es:1',
+      cues,
+      lang: 'es',
+      nativeLang: 'en',
+      provider: p,
+      cache,
+      onChunk: (c) => events.push(`${c.length}:${c[0]?.l1?.split(' ')[0]}`),
+      onProgress: (pr) => events.push(`${pr.phase}:${pr.done}`),
+    });
+    await job.run();
+    expect(lineCalls).toHaveLength(1); // 10 cues fit one 20-cue line chunk
+    expect(events.slice(0, 2)).toEqual(['10:LINE', 'lines:1']);
+    expect(calls).toHaveLength(3);
+    const row = await cache.get('yt:v:es:1');
+    // The word pass returned its own l1 ("EN …"); the provider's result wins when present.
+    expect(row?.cues.every((c) => c?.l1)).toBe(true);
+    expect(row?.complete).toBe(true);
+
+    const again = fakeProvider();
+    again.p.translateLines = async () => {
+      throw new Error('should not be called');
+    };
+    await run(again.p, cache);
+    expect(again.calls).toEqual([]);
+  });
+});

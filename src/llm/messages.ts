@@ -19,6 +19,7 @@ export type OffscreenRequest = { target: 'offscreen' } & (
   | { op: 'available' }
   | { op: 'annotate'; cues: Cue[]; ctx: AnnotateContext }
   | { op: 'translateCues'; cues: Cue[]; from: string; to: string }
+  | { op: 'translateLines'; texts: string[]; from: string; to: string }
 );
 
 export type OffscreenResponse =

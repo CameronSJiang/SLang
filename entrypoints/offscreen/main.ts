@@ -14,6 +14,8 @@ async function handle(req: OffscreenRequest): Promise<unknown> {
       return provider.annotate(req.cues, req.ctx);
     case 'translateCues':
       return provider.translateCues(req.cues, req.from, req.to);
+    case 'translateLines':
+      return provider.translateLines(req.texts, req.from, req.to);
   }
 }
 

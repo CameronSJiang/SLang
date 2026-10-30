@@ -19,6 +19,8 @@ interface YTPlayer extends HTMLElement {
 interface YTTrackOption {
   languageCode?: string;
   kind?: string;
+  /** Set when YouTube auto-translates the track into another language. */
+  translationLanguage?: { languageCode?: string } | null;
 }
 
 const MAX_CACHED = 6;
@@ -137,18 +139,25 @@ function readTracks(p: YTPlayer): { videoId: string; tracks: TrackInfo[] } | nul
 const sameTrack = (o: YTTrackOption | undefined, t: TrackInfo) =>
   o?.languageCode === t.lang && (o.kind === 'asr') === (t.kind === 'asr');
 
+/** Showing exactly this track, not an auto-translation of it. */
+const showing = (o: YTTrackOption | undefined, t: TrackInfo) =>
+  sameTrack(o, t) && !o?.translationLanguage?.languageCode;
+
 function setTrack(p: YTPlayer, videoId: string, pick: TrackInfo, attempt = 0) {
   if (!config.enabled || p.getVideoData?.()?.video_id !== videoId) return;
   try {
     const current = p.getOption?.('captions', 'track') as YTTrackOption | undefined;
-    if (sameTrack(current, pick)) return;
+    if (showing(current, pick)) return;
     if (attempt === 0 && !current?.languageCode) weTurnedOn = true;
     p.loadModule?.('captions');
     const list = p.getOption?.('captions', 'tracklist');
     const entry = Array.isArray(list)
       ? (list as YTTrackOption[]).find((o) => sameTrack(o, pick))
       : undefined;
-    p.setOption?.('captions', 'track', entry ?? { languageCode: pick.lang });
+    const option: YTTrackOption = { ...(entry ?? { languageCode: pick.lang }) };
+    // If the user's auto-translate keeps sticking, clear it explicitly.
+    if (attempt >= 2 && current?.translationLanguage) option.translationLanguage = null;
+    p.setOption?.('captions', 'track', option);
   } catch {
     // player API changed; the DOM fallback in the isolated script still works
   }

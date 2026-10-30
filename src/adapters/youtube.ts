@@ -107,6 +107,9 @@ export function startYouTubeAdapter(
   function onCaptionDom() {
     if (!enabled || state.ad || !observedPlayer) return;
     if ([...captured.values()].some((c) => langMatches(c.lang, targetLang))) return;
+    // We captured only other-language text (e.g. YouTube auto-translate), so the
+    // captions on screen are that language, not ours.
+    if (captured.size) return;
     // Only trust on-screen text when the shown track is (probably) the target language.
     if (tracks && !hasLang(tracks, targetLang)) return;
     const video = observedPlayer.querySelector('video');

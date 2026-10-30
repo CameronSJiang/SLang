@@ -2,7 +2,7 @@
  * Annotates a whole transcript in chunks, playhead-first, with caching.
  * Pure orchestration: providers and the cache are injected.
  */
-import { hashCues } from '../core/annotation';
+import { hashCues, nullAnnotate } from '../core/annotation';
 import { nextChunk, planChunks, type Chunk } from '../core/batching';
 import type { LLMProviderId } from '../core/settings';
 import type { AnnotatedCue, Cue } from '../core/types';
@@ -10,6 +10,11 @@ import { nullProvider } from './null';
 import { ProviderUnavailableError, type LLMProvider } from './types';
 
 export const CONTEXT_OVERLAP = 2;
+/** Cues per call in the fast line-translation pass. */
+export const LINE_CHUNK = 20;
+
+const nullAnnotation = (cue: Cue, lang: string): AnnotatedCue =>
+  nullAnnotate([cue], lang)[0] as AnnotatedCue;
 
 export interface CachedTranscript {
   key: string;
@@ -29,6 +34,8 @@ export interface TranscriptCache {
 
 export interface AnnotationProgress {
   provider: LLMProviderId;
+  /** lines: fast full-line translation pass; words: per-word annotation. */
+  phase: 'lines' | 'words';
   done: number;
   total: number;
   finished: boolean;
@@ -87,7 +94,8 @@ export class AnnotationJob {
     const isDone = (i: number) =>
       row.cues[i] !== null && (row.by[i] !== 'null' || this.provider.id === 'null');
 
-    const ready = row.cues.filter((c, i): c is AnnotatedCue => c !== null && isDone(i));
+    // Send everything cached, including line-only translations still waiting for word meanings.
+    const ready = row.cues.filter((c): c is AnnotatedCue => c !== null);
     if (ready.length) this.o.onChunk(ready);
 
     const chunks = planChunks(cues.length, this.provider.chunkSize, CONTEXT_OVERLAP);
@@ -96,11 +104,14 @@ export class AnnotationJob {
       for (let j = c.start; j < c.end; j++) if (!isDone(j)) return void pending.add(i);
     });
 
+    await this.translateLinesFirst(row);
+
     let done =
       cues.length - chunks.reduce((n, c, i) => n + (pending.has(i) ? c.end - c.start : 0), 0);
     const progress = (finished: boolean) =>
       this.o.onProgress?.({
         provider: this.provider.id,
+        phase: 'words',
         done,
         total: cues.length,
         finished,
@@ -124,9 +135,13 @@ export class AnnotationJob {
           lang: this.o.lang,
           nativeLang: this.o.nativeLang,
           context: cues.slice(c.contextStart, c.start),
+          skipLineTranslation: slice.every((_, k) => !!row.cues[c.start + k]?.l1),
         };
         const { result, by } = await this.annotateChunk(slice, ctx);
         result.forEach((a, k) => {
+          // Keep a line translation from the fast pass if the word pass didn't produce one.
+          const l1 = a.l1 ?? row.cues[c.start + k]?.l1;
+          if (l1) a.l1 = l1;
           row.cues[c.start + k] = a;
           row.by[c.start + k] = by;
         });
@@ -142,6 +157,57 @@ export class AnnotationJob {
     row.complete = row.by.every((b) => b !== null && (b !== 'null' || this.provider.id === 'null'));
     await cache.put(row);
     progress(true);
+  }
+
+  /**
+   * Fast pass: translate every line that has no translation yet, playhead-first,
+   * so hovering works long before the slow word pass reaches that line.
+   */
+  private async translateLinesFirst(row: CachedTranscript): Promise<void> {
+    const translate = this.provider.translateLines?.bind(this.provider);
+    const { cues, lang, nativeLang } = this.o;
+    if (!translate) return;
+    const chunks = planChunks(cues.length, LINE_CHUNK, 0);
+    const pending = new Set<number>();
+    chunks.forEach((c, i) => {
+      for (let j = c.start; j < c.end; j++) if (!row.cues[j]?.l1) return void pending.add(i);
+    });
+    const total = pending.size;
+    while (!this.stopped) {
+      const i = nextChunk(pending, chunks, cues, this.playhead);
+      if (i === undefined) return;
+      pending.delete(i);
+      const c = chunks[i] as Chunk;
+      const slice = cues.slice(c.start, c.end);
+      let lines: string[];
+      try {
+        lines = await translate(
+          slice.map((x) => x.text),
+          lang,
+          nativeLang,
+        );
+      } catch {
+        return; // no fast path after all; the word pass still translates lines
+      }
+      const updated = slice.map((cue, k) => {
+        const idx = c.start + k;
+        const a = { ...(row.cues[idx] ?? nullAnnotation(cue, lang)) };
+        if (lines[k]) a.l1 = lines[k];
+        row.cues[idx] = a;
+        row.by[idx] ??= 'null'; // words still pending
+        return a;
+      });
+      row.updatedAt = Date.now();
+      await this.o.cache.put(row);
+      this.o.onChunk(updated);
+      this.o.onProgress?.({
+        provider: this.provider.id,
+        phase: 'lines',
+        done: total - pending.size,
+        total,
+        finished: false,
+      });
+    }
   }
 
   /** Try the provider, retry once, then fall back to Null for this chunk. */

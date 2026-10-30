@@ -173,13 +173,22 @@ export class ChromeAIProvider implements LLMProvider {
     };
   }
 
+  translateLines = async (texts: string[], from: string, to: string): Promise<string[]> => {
+    const t = await this.translator(from, to);
+    if (!t)
+      throw new ProviderUnavailableError('Chrome Translator is not ready for this language pair');
+    return Promise.all(texts.map((x) => t.translate(x)));
+  };
+
   annotate: LLMProvider['annotate'] = async (cues, ctx) => {
-    const translator = await this.translator(ctx.lang, ctx.nativeLang);
+    const translator = ctx.skipLineTranslation
+      ? null
+      : await this.translator(ctx.lang, ctx.nativeLang);
     const out = await annotateWithJson(
       this.completer(ctx.lang, ctx.nativeLang),
       cues,
       ctx,
-      !translator,
+      !translator && !ctx.skipLineTranslation,
       'object',
     );
     if (translator) {

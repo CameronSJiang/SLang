@@ -50,6 +50,8 @@ export const offscreenChromeAI: LLMProvider = {
   annotate: async (cues, ctx) => (await call({ op: 'annotate', cues, ctx })) as AnnotatedCue[],
   translateCues: async (cues, from, to) =>
     (await call({ op: 'translateCues', cues, from, to })) as Cue[],
+  translateLines: async (texts, from, to) =>
+    (await call({ op: 'translateLines', texts, from, to })) as string[],
   translateLine: async (text, from, to) => {
     const out = (await call({
       op: 'translateCues',

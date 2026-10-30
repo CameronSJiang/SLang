@@ -7,6 +7,8 @@ export interface AnnotateContext {
   nativeLang: string;
   /** Preceding cues, sent for meaning only. */
   context: Cue[];
+  /** Line translations already exist (from translateLines); only annotate words. */
+  skipLineTranslation?: boolean;
 }
 
 export interface LLMProvider {
@@ -18,6 +20,11 @@ export interface LLMProvider {
   annotate(cues: Cue[], ctx: AnnotateContext): Promise<AnnotatedCue[]>;
   translateLine(text: string, from: string, to: string): Promise<string>;
   translateCues(cues: Cue[], from: string, to: string): Promise<Cue[]>;
+  /**
+   * Optional fast path for full-line translation (e.g. Chrome's Translator
+   * API), run over the whole transcript before the slower word pass.
+   */
+  translateLines?(texts: string[], from: string, to: string): Promise<string[]>;
 }
 
 /** The provider can't serve any more requests (bad key, model gone): skip it for the rest of the job. */
