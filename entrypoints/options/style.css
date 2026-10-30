@@ -1,0 +1,51 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+main {
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+label,
+.label {
+  font-weight: 600;
+  margin-top: 6px;
+}
+label.inline {
+  font-weight: normal;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.row input[type='password'],
+.row input[type='text'] {
+  flex: 1;
+}
+.providers li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.muted {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+.warn {
+  color: #b45309;
+}
+.status {
+  min-height: 1.2em;
+  color: #15803d;
+}
