@@ -2,10 +2,8 @@
 
 ## M0 — Scaffold ✅
 
-WXT MV3 + TS strict + Preact + Dexie + Vitest + ESLint/Prettier (pnpm); all 6 entrypoints; options page
-(languages, providers, API key in `storage.local`, density, level). Repo moved to SLang, renamed Weave → SLang.
-Decisions: TS pinned to 6.0 (typescript-eslint); CI script is `pnpm check` (`pnpm ci` is reserved);
-`null` provider forced last; ESLint bans `chrome`/`browser`/`window`/`document` in `src/core`.
+Scaffold, options page, repo moved + renamed. TS pinned to 6.0 (typescript-eslint); CI = `pnpm check`
+(`pnpm ci` is reserved); `null` provider forced last; ESLint bans `chrome`/DOM globals in `src/core`.
 
 ## M1 — Caption pipeline + overlay ✅
 
@@ -19,18 +17,12 @@ Decisions: TS pinned to 6.0 (typescript-eslint); CI script is `pnpm check` (`pnp
   keeps non-target tracks in `state.sources` for M2.5. `adapters/html5.ts` + popup "Show captions on this page".
 - `ui/overlay/`: Shadow DOM inside `#movie_player`, rVFC sync (timeupdate fallback), drag to move (saved),
   font size / high contrast / on-off settings, "No Spanish captions" notice, native captions hidden (opacity 0).
-- 27 unit tests. Headless e2e against a mock YouTube page: 18/18 checks (sync, gaps, ads, drag, SPA nav,
-  fetch + XHR, overlay off, html5 adapter).
-
-**Decisions**
-
+- 27 unit tests; headless e2e on a mock YouTube page passes 18/18 (sync, ads, drag, SPA nav, html5).
+  **Decisions**
 - Spec gap: player only fetches timedtext when CC is on, so we enable the target track (`setOption`) ourselves;
   if we turned CC on, turning the overlay off turns it back off.
 - Most recent target-language capture wins (respects a manual track switch). No transcript caching until M2.
-
-**Known issues**
-
+  **Known issues**
 - Not tested on live YouTube from CI (blocked); player API (`setOption`/`getPlayerResponse`) is undocumented.
 - Shorts and m.youtube.com unsupported. Generic adapter can't show over sites that fullscreen the bare `<video>`.
-
-**Next:** M2 — annotation (LLM) + caching.
+  **Next:** M2 — annotation (LLM) + caching.
