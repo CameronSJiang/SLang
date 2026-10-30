@@ -24,7 +24,13 @@ function aiMessage(ai: AnnotationProgress | null | undefined): string | null {
   if (ai.error) return `Translations unavailable: ${ai.error}. Check SLang settings.`;
   if (ai.provider === 'null')
     return 'Translations are off. Set up an AI provider in SLang settings.';
-  if (!ai.finished && ai.total) return `Translating… ${Math.floor((ai.done / ai.total) * 100)}%`;
+  if (!ai.finished && ai.total) {
+    const pct = Math.floor((ai.done / ai.total) * 100);
+    // Lines come first and fast; word meanings (used from M3 on) fill in slowly after.
+    return ai.phase === 'lines'
+      ? `Translating lines… ${pct}%`
+      : `Line translations ready · word meanings ${pct}%`;
+  }
   return null;
 }
 
