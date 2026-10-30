@@ -20,12 +20,8 @@ line pass, IndexedDB cache (0 calls on reload), hover → L1 line. Deps: `@anthr
 - Options: 45-item yes/no level test (20% pseudo-words) → level + `vocabSize`. Chrome AI skips top-300 words.
 - 65 unit tests; headless e2e 13/13 for M3 (A1 vs C1 density, popover, save, exposure, test) + M1/M2 suites.
 
-**Decisions**
+**Decisions / known issues**
 
-- Hover L1 line floats above the caption (it shifted words under the pointer). Popover pauses playback.
-
-**Known issues**
-
-- Gloss quality depends on provider (Gemini Nano lemmas are weak). Placement test only for Spanish.
+- Hover L1 floats above the caption; popover pauses playback. Nano lemmas are weak; level test es-only.
 
 **Next:** M2.5 — Dub mode, then M4 — review page.
