@@ -1,15 +1,15 @@
 # SLang — Product & Technical Spec (Phase 0: Chrome extension)
 
 ## Goal
-Prove the learning loop before fighting mobile OSes: users watch real L2 video → see L2 captions with *just enough* glosses → save/learn words → review them with clip context → come back.
+Prove the learning loop before fighting mobile OSes: users watch real video — either L2 video with L2 captions, or any other video **dubbed live into L2** — see L2 text with *just enough* glosses → save/learn words → review them with clip context → come back.
 Success metrics (log locally, show on Stats page): week-4 retention, minutes watched, words saved, 7-day recall rate, review sessions ÷ watch sessions.
 
 First language pair: EN speaker learning Spanish (es). Keep language codes as config so ko/ja/fr are a data change, not a rewrite.
 
 ## Pedagogy rules (non-negotiable — these are the product)
-1. Default view = **L2 captions**. Full L1 line translation is hidden; revealed on demand (hotkey `R` or hover).
+1. **Everything the learner hears and reads defaults to L2.** L2 video → L2 captions (Captions mode). Non-L2 video → dubbed into L2 (Dub mode, M2.5). Never dub or caption into L1 by default; the full L1 line translation is hidden and revealed on demand (hotkey `R` or hover).
 2. Gloss only words the learner probably doesn't know, capped per cue (i+1). Target ≈95–98% known-word coverage.
-3. **Gloss, don't substitute.** Show the L1 gloss as small ruby text above the L2 word; never rewrite the sentence (avoids morphology/agreement errors).
+3. **Gloss, don't substitute.** Show the L1 gloss as small ruby text above the L2 word; never rewrite or mix L1 words into an L2 sentence (avoids morphology/agreement errors). Dub mode translates whole lines into natural L2; it never produces mixed-language lines.
 4. Every saved word must re-enter a review loop with the sentence + clip it came from.
 5. Interaction is optional; watching without clicking still updates the learner model (implicit signals).
 
@@ -39,7 +39,7 @@ Dexie tables: `transcripts` (key: `${site}:${videoId}:${lang}:${schemaVersion}`)
 - Parse json3 → `Cue[]`; merge auto-caption fragments into sentence-ish cues (split on punctuation / gaps >0.8s / max 12 words).
 - Fallback: `MutationObserver` on the caption container (`.ytp-caption-segment`) → build cues live (no lookahead).
 - Handle SPA navigation (`yt-navigate-finish`), ads (pause overlay while `.ad-showing`), caption track language switches.
-- If no L2 track exists, show a small in-overlay notice: "No <lang> captions for this video."
+- Capture whatever track the player loads and record its language (dub mode needs non-L2 tracks too). If no L2 track exists, show a small in-overlay notice: "No <lang> captions for this video." (M2.5 replaces this with Dub mode.)
 
 **Generic adapter** (`src/adapters/html5.ts`): on user click in popup, inject into the active tab; read `video.textTracks` (mode → 'hidden', listen to `cuechange`).
 
@@ -52,7 +52,7 @@ Dexie tables: `transcripts` (key: `${site}:${videoId}:${lang}:${schemaVersion}`)
 
 ## M2 — Annotation (LLM) + caching
 - `src/core/tokenize.ts`: `Intl.Segmenter(lang, {granularity:'word'})` for surfaces/offsets.
-- `LLMProvider` interface: `annotate(cues: Cue[], ctx): Promise<AnnotatedCue[]>`, `translateLine(text): Promise<string>`, `available(): Promise<boolean>`.
+- `LLMProvider` interface: `annotate(cues: Cue[], ctx): Promise<AnnotatedCue[]>`, `translateLine(text, from, to): Promise<string>`, `translateCues(cues, from, to): Promise<Cue[]>`, `available(): Promise<boolean>`.
 - Providers, tried in order the user picks:
   1. **Chrome built-in AI**: Prompt API (extensions) for annotation; Translator API for L1 line translation. Feature-detect and handle model download state.
   2. **Anthropic (BYO key)**: Messages API from the background service worker with header `anthropic-dangerous-direct-browser-access: true`; default model `claude-haiku-5-5`; ask for strict JSON (lemma, pos, context-specific gloss per token).
@@ -60,6 +60,18 @@ Dexie tables: `transcripts` (key: `${site}:${videoId}:${lang}:${schemaVersion}`)
 - Batch: annotate the full transcript up-front in chunks of ~30 cues with 2 cues of overlap for context; annotate the chunk around the current playhead first, then the rest in background. Validate JSON with a tiny schema check; retry once on failure, else Null for that chunk.
 - Cache annotated transcripts in IndexedDB keyed as above. Never send transcripts anywhere except the chosen LLM provider.
 - Done when: second load of the same video makes zero LLM calls; a 20-min video annotates without blocking playback.
+
+## M2.5 — Dub mode (live dubbing into L2)
+- **Playback modes** (options default + popup switcher; hotkey later). Audio and caption layers are independent so they combine:
+  - audio: `original` | `dub` (L2 voice, original ducked)
+  - captions: `off` | `l2` (glossed) | `l2+source` (glossed L2 plus the original line, small, below)
+  - presets: **Captions** (original + l2), **Dub** (dub + off), **Dub + captions** (dub + l2), **Bilingual** (dub + l2+source), **Auto** (L2 track exists → Captions, else Dub + captions; default).
+- Translate source cues → L2 with `translateCues`, playhead-first, ~30-cue chunks like M2; cache in `transcripts` with key `${site}:${videoId}:${srcLang}>${l2}:dub:${schemaVersion}`. Dubbed lines then go through the same annotate/gloss pipeline, so saving words, the learner model, and reviews work identically in Dub mode.
+- TTS: `speechSynthesis` with an L2 voice (voice picker in options). Per cue, set rate so the line fits the cue duration (clamp 0.8–1.6×); if it still overruns, pause the video until the utterance ends, then resume.
+- Ducking: lower `video.volume` to ~15% of the user's level while speaking, restore after; respect mute.
+- Seek, pause, playback-rate change, ads and SPA navigation cancel the current utterance and resync to the playhead.
+- Done when: an English YouTube video plays with Spanish voice starting within ~0.5s of each cue, original ducked; switching presets mid-video works without reload; second load makes zero translation calls.
+- Later (ask first — new dependency + an extra network call): natural cloud TTS voices, per-speaker voices.
 
 ## M3 — Learner model + adaptive glossing
 - Ship a frequency list for the target language (e.g. top 20k words from an OpenSubtitles-derived list; check license, store as compressed JSON in `public/`).
