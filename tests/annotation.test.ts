@@ -107,6 +107,26 @@ describe('parseAnnotation', () => {
     expect(out?.[1]?.tokens[0]).toMatchObject({ lemma: 'tener', pos: 'VERB', start: 0, end: 5 });
   });
 
+  it('recovers when a small model puts each word on its own "line"', () => {
+    const words = [
+      ['Hola', 'hola', 'INTJ', 'hi'],
+      ['a', 'a', 'ADP', 'to'],
+      ['todos', 'todo', 'PRON', 'all'],
+      ['Tengo', 'tener', 'VERB', 'I have'],
+      ['un', 'uno', 'DET', 'a'],
+      ['perro', 'perro', 'NOUN', 'dog'],
+    ];
+    const out = parseAnnotation(
+      { lines: words.map(([s, l, p, g], i) => ({ i, w: [{ s, l, p, g }] })) },
+      cues,
+      'es',
+    );
+    expect(out?.map((c) => c.tokens.map((t) => t.gloss))).toEqual([
+      ['hi', 'to', 'all'],
+      ['I have', 'a', 'dog'],
+    ]);
+  });
+
   it('object-style prompts constrain each word', () => {
     const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, style: 'object' });
     expect(JSON.stringify(p.schema)).toContain('"required":["s","l","p","g"]');

@@ -86,7 +86,8 @@ export function buildAnnotationPrompt(
           `s = the word exactly as listed; l = its dictionary form in ${langName};`,
           `p = its Universal Dependencies part-of-speech tag;`,
           `g = a short ${nativeName} meaning (1-3 words) that fits THIS sentence.`,
-          `"i" is the line number shown in brackets.`,
+          `"i" is the line number shown in brackets. Output exactly one object per bracketed line,`,
+          `with ALL of that line's words in its "w" array.`,
         ]
       : [
           `For every listed word, in order, output one string "surface|lemma|POS|gloss":`,
@@ -149,10 +150,16 @@ function entryParts(e: unknown): string[] | null {
   return [o.s.trim(), str(o.l), str(o.p), str(o.g)];
 }
 
-/** Align entries onto spans, tolerating skipped or extra entries. */
-function alignWords(spans: WordSpan[], entries: unknown[]): { tokens: Token[]; hits: number } {
-  const parsed = entries.map(entryParts).filter((p): p is string[] => p !== null);
-  let j = 0;
+/**
+ * Align parsed entries onto spans starting at `from`, tolerating skipped or
+ * extra entries. Returns where the next span's search should start.
+ */
+function alignWords(
+  spans: WordSpan[],
+  parsed: string[][],
+  from = 0,
+): { tokens: Token[]; hits: number; next: number } {
+  let j = from;
   let hits = 0;
   const tokens = spans.map((w) => {
     // Look a few entries ahead for this surface, so one skipped word doesn't shift the rest.
@@ -173,8 +180,11 @@ function alignWords(spans: WordSpan[], entries: unknown[]): { tokens: Token[]; h
     }
     return bareToken(w);
   });
-  return { tokens, hits };
+  return { tokens, hits, next: j };
 }
+
+const entriesOf = (w: unknown): string[][] =>
+  Array.isArray(w) ? w.map(entryParts).filter((p): p is string[] => p !== null) : [];
 
 /**
  * Validate a model response and merge it onto `cues`. Returns null when the
@@ -196,12 +206,20 @@ export function parseAnnotation(
     byIndex.clear();
     objs.forEach((l, i) => byIndex.set(i, l));
   }
+  // If the model split lines differently (Gemini Nano likes one "line" per word),
+  // ignore its line structure and align all words in order across the chunk.
+  const perLine = objs.length === cues.length && cues.every((_, i) => byIndex.has(i));
+  const flat = perLine ? [] : objs.flatMap((l) => entriesOf(l.w));
+  let cursor = 0;
   let words = 0;
   let hits = 0;
   const out = cues.map((cue, i) => {
     const spans = tokenize(cue.text, lang);
-    const line = byIndex.get(i);
-    const aligned = alignWords(spans, Array.isArray(line?.w) ? line.w : []);
+    const line = perLine ? byIndex.get(i) : undefined;
+    const aligned = perLine
+      ? alignWords(spans, entriesOf(line?.w))
+      : alignWords(spans, flat, cursor);
+    cursor = aligned.next;
     words += spans.length;
     hits += aligned.hits;
     const l1 = typeof line?.t === 'string' && line.t.trim() ? line.t.trim() : undefined;
