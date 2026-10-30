@@ -17,7 +17,7 @@
 
 **Decisions**
 
-- Lives in `weave/` because the repo root is a Unity project.
+- Moved from `CapstoneEngineeringProject/weave/` to its own repo (SLang) with history.
 - Extra dev deps (approved): `@preact/preset-vite`, `typescript-eslint`, `eslint-config-prettier`, `globals`.
 - CI script named `check` (`pnpm ci` is a reserved pnpm command).
 - TypeScript pinned to 6.0 (typescript-eslint doesn't support TS 7 yet).
