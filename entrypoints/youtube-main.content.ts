@@ -4,6 +4,6 @@ export default defineContentScript({
   world: 'MAIN',
   runAt: 'document_start',
   main() {
-    console.info('[weave] youtube content (main) loaded');
+    console.info('[slang] youtube content (main) loaded');
   },
 });

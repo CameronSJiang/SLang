@@ -35,7 +35,7 @@ export function transcriptKey(site: string, videoId: string, lang: string): stri
   return `${site}:${videoId}:${lang}:${TRANSCRIPT_SCHEMA_VERSION}`;
 }
 
-export const db = new Dexie('weave') as Dexie & {
+export const db = new Dexie('slang') as Dexie & {
   transcripts: EntityTable<TranscriptRow, 'key'>;
   lexicon: Table<LexEntry, [string, string]>;
   cards: EntityTable<Card, 'id'>;

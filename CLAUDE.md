@@ -1,4 +1,4 @@
-# Weave — Chrome extension for learning languages from video
+# SLang — Chrome extension for learning languages from video
 
 Learn a language from the videos you already watch: L2 captions + adaptive glosses + a learner model + spaced repetition.
 Full spec: `SPEC.md`. Progress log: `PROGRESS.md`.

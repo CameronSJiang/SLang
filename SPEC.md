@@ -1,4 +1,4 @@
-# Weave — Product & Technical Spec (Phase 0: Chrome extension)
+# SLang — Product & Technical Spec (Phase 0: Chrome extension)
 
 ## Goal
 Prove the learning loop before fighting mobile OSes: users watch real L2 video → see L2 captions with *just enough* glosses → save/learn words → review them with clip context → come back.

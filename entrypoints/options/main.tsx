@@ -74,7 +74,7 @@ function Options() {
 
   return (
     <main>
-      <h1>Weave settings</h1>
+      <h1>SLang settings</h1>
 
       <section>
         <label for="targetLang">Language I'm learning</label>

@@ -1,3 +1,3 @@
 export default defineBackground(() => {
-  console.info('[weave] background ready');
+  console.info('[slang] background ready');
 });

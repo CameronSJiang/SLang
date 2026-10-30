@@ -2,6 +2,6 @@
 export default defineContentScript({
   matches: ['*://*.youtube.com/*'],
   main() {
-    console.info('[weave] youtube content (isolated) loaded');
+    console.info('[slang] youtube content (isolated) loaded');
   },
 });
