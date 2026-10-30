@@ -10,7 +10,7 @@ import {
 import type { LLMProvider } from '@/src/llm/types';
 
 const SAMPLES: Record<string, string> = {
-  es: '¿Qué tal? Hoy vamos a la playa con mis amigos.',
+  es: '¿Qué tal? Hoy vamos a la playa con mis amigos para nadar y tomar el sol.',
   fr: 'Salut ! Aujourd’hui on va à la plage avec mes amis.',
   ja: 'こんにちは。今日は友達と海に行きます。',
   ko: '안녕하세요. 오늘은 친구들과 바다에 가요.',
@@ -32,10 +32,14 @@ async function runTest(p: LLMProvider, s: Settings): Promise<string> {
     lang: s.targetLang,
     nativeLang: s.nativeLang,
     context: [],
+    // Same as on videos: slow on-device models skip very common words.
+    ...(p.commonCutoff ? { commonCutoff: p.commonCutoff } : {}),
   });
   const secs = ((performance.now() - t0) / 1000).toFixed(1);
-  const words = cue?.tokens.map((t) => `${t.surface} = ${t.gloss || '?'}`).join(', ');
-  return `OK in ${secs}s. ${words}${cue?.l1 ? ` → “${cue.l1}”` : ''}`;
+  const glossed = cue?.tokens.filter((t) => t.gloss) ?? [];
+  const words = glossed.map((t) => `${t.surface} = ${t.gloss}`).join(', ');
+  const common = (cue?.tokens.length ?? 0) - glossed.length;
+  return `OK in ${secs}s. ${words || 'no word meanings'}${common ? ` (${common} common words skipped)` : ''}${cue?.l1 ? ` → “${cue.l1}”` : ''}`;
 }
 
 export function AIPanel({ s }: { s: Settings }) {

@@ -20,6 +20,8 @@ export interface AnnotationPrompt {
   system: string;
   user: string;
   schema: Record<string, unknown>;
+  /** Words the model is asked about; if empty there's nothing to send. */
+  asked: string[];
 }
 
 /** Words the model doesn't need to annotate (very common words); they keep bare tokens. */
@@ -42,22 +44,50 @@ export interface PromptOptions {
 
 export type EntryStyle = 'compact' | 'object';
 
-const OBJECT_ENTRY = {
+/**
+ * One word entry. With `words`, `s` is limited to exactly those surfaces, so a
+ * schema-constrained model can't wander off to words we didn't ask about.
+ */
+const objectEntry = (words?: readonly string[]) => ({
   type: 'object',
   additionalProperties: false,
   required: ['s', 'l', 'p', 'g'],
   properties: {
-    s: { type: 'string' },
+    s: words?.length ? { type: 'string', enum: [...new Set(words)] } : { type: 'string' },
     l: { type: 'string' },
     p: { type: 'string', enum: UPOS },
     g: { type: 'string' },
   },
-};
+});
 
 export function annotationSchema(
   withLineTranslation: boolean,
   style: EntryStyle = 'compact',
+  words?: readonly string[],
+  lineCount?: number,
 ): Record<string, unknown> {
+  if (style === 'object') {
+    // Flat and exact: one entry per asked word, in order, so a small model can't stop early
+    // or regroup lines. Line translations (if wanted) are a parallel array.
+    const n = words?.length ?? 0;
+    const props: Record<string, unknown> = {
+      words: { type: 'array', minItems: n, maxItems: n, items: objectEntry(words) },
+    };
+    if (withLineTranslation) {
+      props.translations = {
+        type: 'array',
+        minItems: lineCount ?? 0,
+        maxItems: lineCount ?? 0,
+        items: { type: 'string' },
+      };
+    }
+    return {
+      type: 'object',
+      additionalProperties: false,
+      required: Object.keys(props),
+      properties: props,
+    };
+  }
   const line: Record<string, unknown> = {
     type: 'object',
     additionalProperties: false,
@@ -65,7 +95,7 @@ export function annotationSchema(
     properties: {
       i: { type: 'integer' },
       ...(withLineTranslation ? { t: { type: 'string' } } : {}),
-      w: { type: 'array', items: style === 'object' ? OBJECT_ENTRY : { type: 'string' } },
+      w: { type: 'array', items: { type: 'string' } },
     },
   };
   return {
@@ -86,12 +116,10 @@ export function buildAnnotationPrompt(
   const fields =
     style === 'object'
       ? [
-          `For every listed word, in order, output an object in "w":`,
+          `Output "words": one object for EVERY listed word, in the order listed, across all lines:`,
           `s = the word exactly as listed; l = its dictionary form in ${langName};`,
           `p = its Universal Dependencies part-of-speech tag;`,
-          `g = a short ${nativeName} meaning (1-3 words) that fits THIS sentence.`,
-          `"i" is the line number shown in brackets. Output exactly one object per bracketed line,`,
-          `with ALL of that line's words in its "w" array.`,
+          `g = a short ${nativeName} meaning (1-3 words) that fits ITS sentence.`,
         ]
       : [
           `For every listed word, in order, output one string "surface|lemma|POS|gloss":`,
@@ -103,7 +131,9 @@ export function buildAnnotationPrompt(
     `You annotate ${langName} subtitles for a ${nativeName}-speaking language learner.`,
     ...fields,
     withLineTranslation
-      ? `Also give "t": a natural ${nativeName} translation of the whole line.`
+      ? style === 'object'
+        ? `Also give "translations": a natural ${nativeName} translation of each line, in order.`
+        : `Also give "t": a natural ${nativeName} translation of the whole line.`
       : '',
     'Use the context lines only to understand meaning; do not annotate them.',
   ]
@@ -112,18 +142,28 @@ export function buildAnnotationPrompt(
   const contextText = context.length
     ? `Context:\n${context.map((c) => `> ${c.text}`).join('\n')}\n\n`
     : '';
+  const asked: string[] = [];
   const lines = cues
     .map((c, i) => {
       const words = tokenize(c.text, lang)
         .map((w) => w.surface)
         .filter((w) => !opts.skip?.(w));
+      asked.push(...words);
       return `[${i}] ${c.text}\nwords: ${words.length ? words.join(' · ') : '(none)'}`;
     })
     .join('\n');
   return {
-    system,
+    asked,
+    system: opts.skip
+      ? `${system}\nOnly annotate the words listed after "words:" — never other words in the line.`
+      : system,
     user: `${contextText}Lines:\n${lines}`,
-    schema: annotationSchema(withLineTranslation, style),
+    schema: annotationSchema(
+      withLineTranslation,
+      style,
+      style === 'object' ? asked : undefined,
+      cues.length,
+    ),
   };
 }
 
@@ -202,8 +242,12 @@ export function parseAnnotation(
   lang: string,
   skip?: SkipWord,
 ): AnnotatedCue[] | null {
-  const lines = (raw as { lines?: unknown } | null)?.lines;
+  const r = raw as { lines?: unknown; words?: unknown; translations?: unknown } | null;
+  // Object style: a flat word list plus optional per-line translations. Reuse the
+  // line path with one synthetic line holding every word (aligned across cues).
+  const lines = Array.isArray(r?.words) ? [{ w: r.words }] : r?.lines;
   if (!Array.isArray(lines)) return null;
+  const flatTranslations = Array.isArray(r?.translations) ? r.translations : null;
   type Line = { i?: unknown; t?: unknown; w?: unknown };
   const objs = lines.filter((l): l is Line => !!l && typeof l === 'object');
   const byIndex = new Map<number, Line>();
@@ -235,7 +279,8 @@ export function parseAnnotation(
     const tokens = spans.map((w) =>
       skip?.(w.surface) ? bareToken(w) : (aligned.tokens[k++] as Token),
     );
-    const l1 = typeof line?.t === 'string' && line.t.trim() ? line.t.trim() : undefined;
+    const t = flatTranslations ? flatTranslations[i] : line?.t;
+    const l1 = typeof t === 'string' && t.trim() ? t.trim() : undefined;
     return { ...cue, tokens, ...(l1 ? { l1 } : {}) };
   });
   return words === 0 || hits / words >= MIN_COVERAGE ? out : null;

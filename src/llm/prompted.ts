@@ -37,7 +37,11 @@ export async function annotateWithJson(
     style,
     ...(skip ? { skip } : {}),
   });
-  const raw = await complete(p.system, p.user, p.schema);
+  // Every word is common (or there are none) and no line translation is wanted: nothing to ask.
+  const raw =
+    !p.asked.length && !withLineTranslation
+      ? { lines: [] }
+      : await complete(p.system, p.user, p.schema);
   const out = parseAnnotation(raw, cues, ctx.lang, skip);
   if (!out) {
     throw new InvalidResponseError(

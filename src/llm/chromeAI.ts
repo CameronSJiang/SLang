@@ -127,6 +127,19 @@ export async function setupChromeAI(
   await Promise.all(tasks);
 }
 
+/** Drop the keywords some constraint engines reject (array counts). */
+function loosen<T>(schema: T): T;
+function loosen(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(loosen);
+  if (!schema || typeof schema !== 'object') return schema;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(schema)) {
+    if (k === 'minItems' || k === 'maxItems') continue;
+    out[k] = loosen(v);
+  }
+  return out;
+}
+
 export class ChromeAIProvider implements LLMProvider {
   readonly id = 'chrome-ai' as const;
   /** Gemini Nano is small and slow; keep prompts short. */
@@ -134,6 +147,8 @@ export class ChromeAIProvider implements LLMProvider {
   /** Top-300 words cover most running text and nearly every learner knows them. */
   readonly commonCutoff = 300;
   private sessions = new Map<string, Promise<LMSession>>();
+  /** Use count constraints until Chrome says it can't. */
+  private strict = true;
   private translators = new Map<string, Promise<TranslatorInstance | null>>();
 
   async available(): Promise<boolean> {
@@ -183,7 +198,23 @@ export class ChromeAIProvider implements LLMProvider {
       const base = await this.session(system, lang, nativeLang);
       const s = await base.clone(); // fresh context per chunk
       try {
-        const text = await s.prompt(user, { responseConstraint: schema });
+        let text: string;
+        try {
+          text = await s.prompt(user, {
+            responseConstraint: this.strict ? schema : loosen(schema),
+          });
+        } catch (e) {
+          // Older Chrome builds may not support minItems/maxItems in constraints.
+          if (
+            !this.strict ||
+            !(e instanceof Error) ||
+            !/constraint|schema|support/i.test(`${e.name} ${e.message}`)
+          ) {
+            throw e;
+          }
+          this.strict = false;
+          text = await s.prompt(user, { responseConstraint: loosen(schema) });
+        }
         try {
           return JSON.parse(text);
         } catch {

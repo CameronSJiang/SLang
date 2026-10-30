@@ -127,10 +127,49 @@ describe('parseAnnotation', () => {
     ]);
   });
 
-  it('object-style prompts constrain each word', () => {
+  it('object-style prompts ask for exactly one entry per word, in a flat list', () => {
     const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, style: 'object' });
-    expect(JSON.stringify(p.schema)).toContain('"required":["s","l","p","g"]');
+    const schema = JSON.stringify(p.schema);
+    expect(schema).toContain('"words":{"type":"array","minItems":6,"maxItems":6');
+    expect(schema).toContain('"required":["s","l","p","g"]');
+    expect(schema).toContain('"translations":{"type":"array","minItems":2,"maxItems":2');
     expect(p.system).toContain('s = the word exactly as listed');
+  });
+
+  it('parses the flat object format with per-line translations', () => {
+    const w = (s: string, l: string, p: string, g: string) => ({ s, l, p, g });
+    const out = parseAnnotation(
+      {
+        words: [
+          w('Hola', 'hola', 'INTJ', 'hi'),
+          w('a', 'a', 'ADP', 'to'),
+          w('todos', 'todo', 'PRON', 'all'),
+          w('Tengo', 'tener', 'VERB', 'I have'),
+          w('un', 'uno', 'DET', 'a'),
+          w('perro', 'perro', 'NOUN', 'dog'),
+        ],
+        translations: ['Hi all.', 'I have a dog.'],
+      },
+      cues,
+      'es',
+    );
+    expect(out?.map((c) => c.tokens.map((t) => t.gloss))).toEqual([
+      ['hi', 'to', 'all'],
+      ['I have', 'a', 'dog'],
+    ]);
+    expect(out?.map((c) => c.l1)).toEqual(['Hi all.', 'I have a dog.']);
+    const one = parseAnnotation(
+      {
+        words: [
+          w('Tengo', 'tener', 'VERB', 'I have'),
+          w('un', 'uno', 'DET', 'a'),
+          w('perro', 'perro', 'NOUN', 'dog'),
+        ],
+      },
+      [cues[1]!],
+      'es',
+    );
+    expect(one?.[0]?.tokens[2]?.gloss).toBe('dog');
   });
 
   it('rejects malformed or low-coverage responses', () => {
@@ -171,6 +210,15 @@ describe('helpers', () => {
 
 describe('skipping common words', () => {
   const skip = (w: string) => ['a', 'un'].includes(w.toLowerCase());
+  it('object style limits entries to exactly the asked words', () => {
+    const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, style: 'object', skip });
+    expect(p.asked).toEqual(['Hola', 'todos', 'Tengo', 'perro']);
+    expect(JSON.stringify(p.schema)).toContain(
+      '"s":{"type":"string","enum":["Hola","todos","Tengo","perro"]}',
+    );
+    expect(p.system).toContain('Only annotate the words listed');
+  });
+
   it('leaves common words out of the prompt and keeps them as bare tokens', () => {
     const p = buildAnnotationPrompt(cues, [], 'es', { ...opts, skip });
     expect(p.user).toContain('words: Hola · todos');
