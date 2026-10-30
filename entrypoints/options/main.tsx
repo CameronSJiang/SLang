@@ -1,6 +1,8 @@
 import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import {
+  CAPTION_FONT_RANGE,
+  CAPTION_POSITION_RANGE,
   GLOSS_DENSITIES,
   LANGUAGES,
   LEVELS,
@@ -84,6 +86,45 @@ function Options() {
         {s.targetLang === s.nativeLang && (
           <p class="warn">Target and native language are the same.</p>
         )}
+      </section>
+
+      <section>
+        <span class="label">Captions</span>
+        <label class="inline">
+          <input
+            type="checkbox"
+            checked={s.overlayEnabled}
+            onChange={(e) => void update({ overlayEnabled: e.currentTarget.checked })}
+          />
+          Show SLang captions on videos
+        </label>
+        <label for="fontSize">Text size: {s.captionFontSize}px</label>
+        <input
+          id="fontSize"
+          type="range"
+          min={CAPTION_FONT_RANGE[0]}
+          max={CAPTION_FONT_RANGE[1]}
+          value={s.captionFontSize}
+          onChange={(e) => void update({ captionFontSize: Number(e.currentTarget.value) })}
+        />
+        <label for="position">Height above bottom: {Math.round(s.captionPosition)}%</label>
+        <input
+          id="position"
+          type="range"
+          min={CAPTION_POSITION_RANGE[0]}
+          max={CAPTION_POSITION_RANGE[1]}
+          value={s.captionPosition}
+          onChange={(e) => void update({ captionPosition: Number(e.currentTarget.value) })}
+        />
+        <p class="muted">You can also drag the captions up or down on the video.</p>
+        <label class="inline">
+          <input
+            type="checkbox"
+            checked={s.captionHighContrast}
+            onChange={(e) => void update({ captionHighContrast: e.currentTarget.checked })}
+          />
+          High-contrast background
+        </label>
       </section>
 
       <section>

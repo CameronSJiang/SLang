@@ -26,7 +26,17 @@ export interface Settings {
   anthropicApiKey: string;
   glossDensity: GlossDensity;
   level: Level;
+  /** Show our caption overlay on supported players. */
+  overlayEnabled: boolean;
+  /** Caption font size in px. */
+  captionFontSize: number;
+  captionHighContrast: boolean;
+  /** Caption box distance from the bottom of the player, in % of its height. */
+  captionPosition: number;
 }
+
+export const CAPTION_FONT_RANGE = [14, 56] as const;
+export const CAPTION_POSITION_RANGE = [0, 85] as const;
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   targetLang: 'es',
@@ -35,10 +45,18 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   anthropicApiKey: '',
   glossDensity: 'auto',
   level: 'A2',
+  overlayEnabled: true,
+  captionFontSize: 26,
+  captionHighContrast: false,
+  captionPosition: 10,
 });
 
 function isOneOf<T extends string>(list: readonly T[], v: unknown): v is T {
   return typeof v === 'string' && (list as readonly string[]).includes(v);
+}
+
+function clampNum(v: unknown, [lo, hi]: readonly [number, number], fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
 }
 
 const LANG_CODES = Object.keys(LANGUAGES) as LangCode[];
@@ -65,6 +83,11 @@ export function normalizeSettings(raw: unknown): Settings {
     anthropicApiKey: typeof r.anthropicApiKey === 'string' ? r.anthropicApiKey.trim() : '',
     glossDensity: isOneOf(GLOSS_DENSITIES, r.glossDensity) ? r.glossDensity : d.glossDensity,
     level: isOneOf(LEVELS, r.level) ? r.level : d.level,
+    overlayEnabled: typeof r.overlayEnabled === 'boolean' ? r.overlayEnabled : d.overlayEnabled,
+    captionFontSize: Math.round(clampNum(r.captionFontSize, CAPTION_FONT_RANGE, d.captionFontSize)),
+    captionHighContrast:
+      typeof r.captionHighContrast === 'boolean' ? r.captionHighContrast : d.captionHighContrast,
+    captionPosition: clampNum(r.captionPosition, CAPTION_POSITION_RANGE, d.captionPosition),
   };
 }
 

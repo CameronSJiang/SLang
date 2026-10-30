@@ -1,0 +1,132 @@
+{
+  "wireMagic": "pb3",
+  "events": [
+    {
+      "tStartMs": 0,
+      "dDurationMs": 5000,
+      "id": 1,
+      "wpWinPosId": 1,
+      "wsWinStyleId": 1
+    },
+    {
+      "tStartMs": 100,
+      "dDurationMs": 4000,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "hola",
+          "acAsrConf": 0
+        },
+        {
+          "utf8": " a",
+          "tOffsetMs": 400
+        },
+        {
+          "utf8": " todos",
+          "tOffsetMs": 700
+        }
+      ]
+    },
+    {
+      "tStartMs": 2000,
+      "dDurationMs": 2100,
+      "wWinId": 1,
+      "aAppend": 1,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    },
+    {
+      "tStartMs": 2000,
+      "dDurationMs": 3000,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "bienvenidos"
+        },
+        {
+          "utf8": " al",
+          "tOffsetMs": 500
+        },
+        {
+          "utf8": " canal.",
+          "tOffsetMs": 800
+        }
+      ]
+    },
+    {
+      "tStartMs": 4000,
+      "dDurationMs": 1000,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "hoy"
+        },
+        {
+          "utf8": " vamos",
+          "tOffsetMs": 300
+        }
+      ]
+    },
+    {
+      "tStartMs": 6500,
+      "dDurationMs": 6000,
+      "wWinId": 1,
+      "segs": [
+        {
+          "utf8": "uno"
+        },
+        {
+          "utf8": " dos",
+          "tOffsetMs": 200
+        },
+        {
+          "utf8": " tres",
+          "tOffsetMs": 400
+        },
+        {
+          "utf8": " cuatro",
+          "tOffsetMs": 600
+        },
+        {
+          "utf8": " cinco",
+          "tOffsetMs": 800
+        },
+        {
+          "utf8": " seis",
+          "tOffsetMs": 1000
+        },
+        {
+          "utf8": " siete",
+          "tOffsetMs": 1200
+        },
+        {
+          "utf8": " ocho",
+          "tOffsetMs": 1400
+        },
+        {
+          "utf8": " nueve",
+          "tOffsetMs": 1600
+        },
+        {
+          "utf8": " diez",
+          "tOffsetMs": 1800
+        },
+        {
+          "utf8": " once",
+          "tOffsetMs": 2000
+        },
+        {
+          "utf8": " doce",
+          "tOffsetMs": 2200
+        },
+        {
+          "utf8": " trece",
+          "tOffsetMs": 2400
+        }
+      ]
+    }
+  ]
+}

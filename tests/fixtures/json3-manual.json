@@ -1,0 +1,39 @@
+{
+  "wireMagic": "pb3",
+  "events": [
+    {
+      "tStartMs": 1000,
+      "dDurationMs": 2000,
+      "segs": [
+        {
+          "utf8": "¿Qué tal?\nMuy bien."
+        }
+      ]
+    },
+    {
+      "tStartMs": 3000,
+      "dDurationMs": 500
+    },
+    {
+      "tStartMs": 3500,
+      "dDurationMs": 1500,
+      "segs": [
+        {
+          "utf8": "Me "
+        },
+        {
+          "utf8": "alegro."
+        }
+      ]
+    },
+    {
+      "tStartMs": 5000,
+      "dDurationMs": 800,
+      "segs": [
+        {
+          "utf8": "\n"
+        }
+      ]
+    }
+  ]
+}

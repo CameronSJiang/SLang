@@ -15,6 +15,10 @@ describe('normalizeSettings', () => {
       anthropicApiKey: '  sk-ant-abc  ',
       glossDensity: 'high',
       level: 'C1',
+      overlayEnabled: false,
+      captionFontSize: 30,
+      captionHighContrast: true,
+      captionPosition: 40,
     });
     expect(s).toEqual({
       targetLang: 'ko',
@@ -23,6 +27,10 @@ describe('normalizeSettings', () => {
       anthropicApiKey: 'sk-ant-abc',
       glossDensity: 'high',
       level: 'C1',
+      overlayEnabled: false,
+      captionFontSize: 30,
+      captionHighContrast: true,
+      captionPosition: 40,
     });
   });
 
@@ -31,6 +39,13 @@ describe('normalizeSettings', () => {
     expect(s.targetLang).toBe('es');
     expect(s.glossDensity).toBe('auto');
     expect(s.level).toBe('A2');
+  });
+
+  it('clamps caption numbers', () => {
+    const s = normalizeSettings({ captionFontSize: 500, captionPosition: -3 });
+    expect(s.captionFontSize).toBe(56);
+    expect(s.captionPosition).toBe(0);
+    expect(normalizeSettings({ captionFontSize: 'big' }).captionFontSize).toBe(26);
   });
 
   it('dedupes providers and always ends with null', () => {

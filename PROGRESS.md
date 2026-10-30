@@ -2,29 +2,35 @@
 
 ## M0 — Scaffold ✅
 
+WXT MV3 + TS strict + Preact + Dexie + Vitest + ESLint/Prettier (pnpm); all 6 entrypoints; options page
+(languages, providers, API key in `storage.local`, density, level). Repo moved to SLang, renamed Weave → SLang.
+Decisions: TS pinned to 6.0 (typescript-eslint); CI script is `pnpm check` (`pnpm ci` is reserved);
+`null` provider forced last; ESLint bans `chrome`/`browser`/`window`/`document` in `src/core`.
+
+## M1 — Caption pipeline + overlay ✅
+
 **Done**
 
-- WXT 0.21 (MV3) + TS strict + Preact 11 + Dexie 4 + ts-fsrs + Vitest + ESLint/Prettier, pnpm.
-- Entrypoints: `youtube.content` (ISOLATED), `youtube-main.content` (MAIN, document_start),
-  `background`, `options` (opens in tab), `review` (unlisted), `popup`. Scripts are hello-world stubs.
-- `src/core/types.ts` (SPEC types), `src/core/settings.ts` (defaults + `normalizeSettings` + `redactSettings`).
-- `src/storage/settings.ts` (chrome.storage.local load/save/watch), `src/storage/db.ts` (Dexie, 6 tables).
-- Options page: target/native language, provider order (↑/↓, enable/disable), API key (password + Show),
-  gloss density, level. Saves on change.
-- Permissions: `storage`, `activeTab`, `scripting`, host `*://*.youtube.com/*`.
-- 8 tests (settings normalization, redaction, storage round-trip via WXT fakeBrowser).
-  `pnpm check` = lint (eslint + prettier --check + tsc) + test. Headless Chromium smoke test: options persist.
+- `core/json3.ts` (manual events → cues; ASR words merged on punctuation / gap > 0.8s / 12 words),
+  `core/cueIndex.ts` (binary search), `core/lang.ts` (track match/pick), `core/liveCues.ts` (DOM fallback, VTT clean).
+- `adapters/youtubeMain.ts` (MAIN): wraps fetch + XHR for `/api/timedtext`, reads tracks from the player,
+  turns on the best track via player API, replays cache to the isolated script. `adapters/bridge.ts` validates messages.
+- `adapters/youtube.ts` (ISOLATED): json3 primary, `.ytp-caption-segment` fallback, SPA nav, ads, track switches;
+  keeps non-target tracks in `state.sources` for M2.5. `adapters/html5.ts` + popup "Show captions on this page".
+- `ui/overlay/`: Shadow DOM inside `#movie_player`, rVFC sync (timeupdate fallback), drag to move (saved),
+  font size / high contrast / on-off settings, "No Spanish captions" notice, native captions hidden (opacity 0).
+- 27 unit tests. Headless e2e against a mock YouTube page: 18/18 checks (sync, gaps, ads, drag, SPA nav,
+  fetch + XHR, overlay off, html5 adapter).
 
 **Decisions**
 
-- Moved from `CapstoneEngineeringProject/weave/` to its own repo (SLang) with history; renamed Weave → SLang.
-- Extra dev deps (approved): `@preact/preset-vite`, `typescript-eslint`, `eslint-config-prettier`, `globals`.
-- CI script named `check` (`pnpm ci` is a reserved pnpm command).
-- TypeScript pinned to 6.0 (typescript-eslint doesn't support TS 7 yet).
-- `null` provider is always forced last; settings in `chrome.storage.local` (not Dexie `settings`,
-  which is reserved for app state). ESLint bans `chrome`/`browser`/`window`/`document` in `src/core`.
-- Lexicon primary key is `[lang+lemma]`; transcripts key = `${site}:${videoId}:${lang}:${schemaVersion}`.
-  **Known issues**
+- Spec gap: player only fetches timedtext when CC is on, so we enable the target track (`setOption`) ourselves;
+  if we turned CC on, turning the overlay off turns it back off.
+- Most recent target-language capture wins (respects a manual track switch). No transcript caching until M2.
 
-- `pnpm dev` unverified here (no display). Languages: en/es/fr/ja/ko (`LANGUAGES` in core/settings).
-  **Next:** M1 — YouTube caption pipeline + overlay.
+**Known issues**
+
+- Not tested on live YouTube from CI (blocked); player API (`setOption`/`getPlayerResponse`) is undocumented.
+- Shorts and m.youtube.com unsupported. Generic adapter can't show over sites that fullscreen the bare `<video>`.
+
+**Next:** M2 — annotation (LLM) + caching.
