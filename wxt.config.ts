@@ -31,18 +31,21 @@ export default defineConfig({
     cross_origin_opener_policy: { value: 'same-origin' },
   },
   vite: () => ({
-    plugins: [preact()],
+    plugins: [
+      preact(),
+      {
+        // transformers.js references the ONNX runtime wasm, so Vite emits a copy; we load it from
+        // /ort/ (wasmPaths) instead, so drop the 21 MB duplicate.
+        name: 'slang-drop-duplicate-ort-wasm',
+        generateBundle(_options, bundle) {
+          for (const name of Object.keys(bundle)) {
+            if (/^assets\/ort-wasm-.*\.wasm$/.test(name)) delete bundle[name];
+          }
+        },
+      },
+    ],
   }),
   hooks: {
-    // Vite also emits transformers.js's own reference to the runtime wasm; we load it from /ort/
-    // (wasmPaths), so drop the 21 MB duplicate.
-    'build:done': async (wxt) => {
-      const { readdir, rm } = await import('node:fs/promises');
-      const dir = path.join(wxt.config.outDir, 'assets');
-      for (const f of await readdir(dir).catch(() => [] as string[])) {
-        if (/^ort-wasm-.*\.wasm$/.test(f)) await rm(path.join(dir, f));
-      }
-    },
     // Ship the ONNX runtime with the extension instead of loading it from a CDN (MV3: no remote code).
     'build:publicAssets': (_wxt, files) => {
       for (const f of ['ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jsep.mjs']) {
