@@ -39,7 +39,7 @@ export default defineConfig({
         name: 'slang-drop-duplicate-ort-wasm',
         generateBundle(_options, bundle) {
           for (const name of Object.keys(bundle)) {
-            if (/^assets\/ort-wasm-.*\.wasm$/.test(name)) delete bundle[name];
+            if (/^assets\/ort-wasm-.*\.wasm$/.test(name)) Reflect.deleteProperty(bundle, name);
           }
         },
       },
