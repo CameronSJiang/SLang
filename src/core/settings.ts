@@ -18,6 +18,9 @@ export type GlossDensity = (typeof GLOSS_DENSITIES)[number];
 import { PLAYBACK_PRESETS, type PlaybackPreset } from './playback';
 
 export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
+
+export const CAPTION_THEMES = ['slang', 'glass', 'classic', 'paper', 'outline', 'bold'] as const;
+export type CaptionTheme = (typeof CAPTION_THEMES)[number];
 export type Level = (typeof LEVELS)[number];
 
 export interface Settings {
@@ -34,7 +37,7 @@ export interface Settings {
   overlayEnabled: boolean;
   /** Caption font size in px. */
   captionFontSize: number;
-  captionHighContrast: boolean;
+  captionTheme: CaptionTheme;
   /** Caption box distance from the bottom of the player, in % of its height. */
   captionPosition: number;
   /** What to hear and read (M2.5). */
@@ -58,7 +61,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   vocabSize: null,
   overlayEnabled: true,
   captionFontSize: 26,
-  captionHighContrast: false,
+  captionTheme: 'slang',
   captionPosition: 10,
   playbackPreset: 'auto',
   dubVoice: null,
@@ -103,8 +106,12 @@ export function normalizeSettings(raw: unknown): Settings {
         : null,
     overlayEnabled: typeof r.overlayEnabled === 'boolean' ? r.overlayEnabled : d.overlayEnabled,
     captionFontSize: Math.round(clampNum(r.captionFontSize, CAPTION_FONT_RANGE, d.captionFontSize)),
-    captionHighContrast:
-      typeof r.captionHighContrast === 'boolean' ? r.captionHighContrast : d.captionHighContrast,
+    captionTheme: isOneOf(CAPTION_THEMES, r.captionTheme)
+      ? r.captionTheme
+      : // Older versions had a single high-contrast switch.
+        r.captionHighContrast === true
+        ? 'bold'
+        : d.captionTheme,
     captionPosition: clampNum(r.captionPosition, CAPTION_POSITION_RANGE, d.captionPosition),
     playbackPreset: isOneOf(PLAYBACK_PRESETS, r.playbackPreset)
       ? r.playbackPreset

@@ -59,38 +59,48 @@ export function PlacementTest({ s, onDone }: Props) {
 
   if (items) {
     const item = items[answers.length];
+    const pct = (answers.length / items.length) * 100;
     return (
       <div class="placement">
+        <div class="progress" aria-hidden="true">
+          <span style={{ width: `${pct}%` }} />
+        </div>
         <p class="muted">
-          Do you know this word? Some aren’t real words — say no to those. ({answers.length + 1}/
-          {items.length})
+          Do you know this word? Some are fake — say no to those, we’re watching 👀 (
+          {answers.length + 1}/{items.length})
         </p>
         <p class="placement-word" lang={s.targetLang}>
           {item?.word}
         </p>
         <div class="row">
-          <button onClick={() => answer(true)}>Yes, I know it (Y)</button>
+          <button class="primary" onClick={() => answer(true)}>
+            Yes, I know it (Y)
+          </button>
           <button onClick={() => answer(false)}>No (N)</button>
-          <button onClick={() => setItems(null)}>Cancel</button>
+          <button class="btn-ghost" onClick={() => setItems(null)}>
+            Cancel
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <button onClick={() => void start()}>Take the 2-minute level test</button>
+    <div class="stack">
+      <div class="row">
+        <button class="primary" onClick={() => void start()}>
+          Take the 2-minute level test
+        </button>
+      </div>
       {result && (
         <p class="muted">
-          About {result.vocab.toLocaleString()} words — level {result.level}. Saved.
+          🎉 About {result.vocab.toLocaleString()} words — that’s level {result.level}. Saved.
           {result.falseAlarmRate > 0.3 &&
-            ' (You said yes to several fake words, so the estimate was lowered.)'}
+            ' (A few fake words fooled you, so we nudged the estimate down.)'}
         </p>
       )}
       {!result && s.vocabSize && (
-        <p class="muted">
-          Current estimate from your last test: ~{s.vocabSize.toLocaleString()} words.
-        </p>
+        <p class="muted">Your last test: about {s.vocabSize.toLocaleString()} words.</p>
       )}
       {error && <p class="warn">{error}</p>}
     </div>

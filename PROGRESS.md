@@ -23,8 +23,12 @@ ruby glosses, word popover (Save/Known/Ignore, TTS), placement test. Freq lists:
 - Only speed lines up (1.0–1.6×), never slow down (spec said 0.8–1.6). English-audio videos with Spanish
   subtitles are dubbed from that track, no translation. Online ("Google") voices only if chosen (privacy).
 
-**Known issues**
+**Known issues**: headless Chrome has no voices (speech only unit-tested); one voice for all speakers.
 
-- Headless Chrome has no voices, so real speech/ducking is only unit-tested. One voice for all speakers.
+## 0.1.x — Polish ✅
 
-**Next:** M4 — review page with clip context.
+Welcome guide (opens on install), icon, saved-words page, `pnpm zip` + `docs/INSTALL.md`. Design kit
+(`src/ui/settings/page.css`, `kit.tsx`), friendly level picker, 6 caption themes (CSS variables), gloss
+labels instead of `<ruby>` (it stretched words). Chrome injects 75% Inter into extension pages: overridden.
+
+**Next:** OpenAI voice (needs key) or M4 — review page with clip context.

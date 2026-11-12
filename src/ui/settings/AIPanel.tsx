@@ -21,8 +21,8 @@ const STATUS_TEXT: Record<ChromeAIStatus['prompt'], string> = {
   available: 'Ready',
   downloadable: 'Needs a one-time download',
   downloading: 'Downloading…',
-  unavailable: 'Not supported for this language or device',
-  missing: 'Not available in this Chrome (update Chrome, or it may not support built-in AI)',
+  unavailable: 'Not supported on this device/language',
+  missing: 'Not in this Chrome — try updating Chrome',
 };
 
 async function runTest(p: LLMProvider, s: Settings): Promise<string> {
@@ -42,7 +42,16 @@ async function runTest(p: LLMProvider, s: Settings): Promise<string> {
   return `OK in ${secs}s. ${words || 'no word meanings'}${common ? ` (${common} common words skipped)` : ''}${cue?.l1 ? ` → “${cue.l1}”` : ''}`;
 }
 
-export function AIPanel({ s, showAnthropic = true }: { s: Settings; showAnthropic?: boolean }) {
+export function AIPanel({
+  s,
+  showAnthropic = true,
+  only,
+}: {
+  s: Settings;
+  showAnthropic?: boolean;
+  /** Render just one part (the options page places them separately). */
+  only?: 'chrome' | 'anthropic';
+}) {
   const [chrome, setChrome] = useState<ChromeAIStatus | null>(null);
   const [download, setDownload] = useState('');
   const [chromeResult, setChromeResult] = useState('');
@@ -50,6 +59,18 @@ export function AIPanel({ s, showAnthropic = true }: { s: Settings; showAnthropi
 
   const refresh = () => void chromeAIStatus(s.targetLang, s.nativeLang).then(setChrome);
   useEffect(refresh, [s.targetLang, s.nativeLang]);
+
+  const keyTest = (
+    <div class="row">
+      <button
+        disabled={!s.anthropicApiKey}
+        onClick={() => void test(new AnthropicProvider(s.anthropicApiKey), setKeyResult)}
+      >
+        Test Anthropic key
+      </button>
+      {keyResult && <span class="muted">{keyResult}</span>}
+    </div>
+  );
 
   const startDownload = async () => {
     setDownload('Starting…');
@@ -81,47 +102,50 @@ export function AIPanel({ s, showAnthropic = true }: { s: Settings; showAnthropi
       (a) => a === chrome.prompt || a === chrome.translator || a === chrome.dubTranslator,
     );
 
+  const statusChip = (a: ChromeAIStatus['prompt'] | undefined) => (
+    <span class={`chip ${a === 'available' ? 'ok' : 'wait'}`}>
+      {a ? (a === 'available' ? '✓ ' : '') + STATUS_TEXT[a] : 'Checking…'}
+    </span>
+  );
+
+  if (only === 'anthropic') return keyTest;
+
   return (
-    <>
-      <span class="label">Chrome built-in AI (free, on-device)</span>
-      {chrome ? (
-        <p class="muted">
-          Word meanings: {STATUS_TEXT[chrome.prompt]}
-          <br />
-          Line translation: {STATUS_TEXT[chrome.translator]}
-          <br />
-          Dub translation ({LANGUAGES[s.nativeLang]} → {LANGUAGES[s.targetLang]}):{' '}
-          {STATUS_TEXT[chrome.dubTranslator]}
-        </p>
-      ) : (
-        <p class="muted">Checking…</p>
-      )}
+    <div class="stack">
+      <div class="stack">
+        <div class="row">
+          <span class="field-label">Word meanings</span> {statusChip(chrome?.prompt)}
+        </div>
+        <div class="row">
+          <span class="field-label">Line translation</span> {statusChip(chrome?.translator)}
+        </div>
+        <div class="row">
+          <span class="field-label">
+            Dub translation ({LANGUAGES[s.nativeLang]} → {LANGUAGES[s.targetLang]})
+          </span>{' '}
+          {statusChip(chrome?.dubTranslator)}
+        </div>
+      </div>
       <div class="row">
-        {needsDownload && <button onClick={() => void startDownload()}>Download</button>}
+        {needsDownload && (
+          <button class="primary" onClick={() => void startDownload()}>
+            ⬇ Download Chrome AI
+          </button>
+        )}
         <button
           disabled={chrome?.prompt !== 'available'}
           onClick={() => void test(new ChromeAIProvider(), setChromeResult)}
         >
-          Test
+          Test it
         </button>
-        <button onClick={refresh}>Recheck</button>
+        <button class="btn-ghost" onClick={refresh}>
+          ↻ Recheck
+        </button>
       </div>
       {download && <p class="muted">{download}</p>}
       {chromeResult && <p class="muted">{chromeResult}</p>}
 
-      {showAnthropic && (
-        <>
-          <div class="row">
-            <button
-              disabled={!s.anthropicApiKey}
-              onClick={() => void test(new AnthropicProvider(s.anthropicApiKey), setKeyResult)}
-            >
-              Test Anthropic key
-            </button>
-          </div>
-          {keyResult && <p class="muted">{keyResult}</p>}
-        </>
-      )}
-    </>
+      {showAnthropic && only !== 'chrome' && keyTest}
+    </div>
   );
 }

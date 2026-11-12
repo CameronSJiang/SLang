@@ -1,59 +1,418 @@
+/* SLang design kit for extension pages (options, welcome, popup, review). */
 :root {
   color-scheme: light dark;
-  font-family: system-ui, sans-serif;
+  --accent: #7c4dff;
+  --accent-2: #ff6e40;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --grad: linear-gradient(135deg, var(--accent), var(--accent-2));
+  --bg: #f7f5fb;
+  --card: #ffffff;
+  --text: #1d1730;
+  --muted: #6b6480;
+  --line: #e6e1f0;
+  --ok: #2e7d32;
+  --warn: #c2410c;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(29, 23, 48, 0.06), 0 8px 24px rgba(29, 23, 48, 0.06);
+  --font: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14111c;
+    --card: #1e1a29;
+    --text: #f1edfa;
+    --muted: #a39cb8;
+    --line: #2f2940;
+    --accent-soft: color-mix(in srgb, var(--accent) 24%, transparent);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+* {
+  box-sizing: border-box;
+}
+/* Chrome injects its own text defaults (75% Inter) into extension pages; beat them on body. */
+html body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
 }
 main {
-  max-width: 520px;
-  margin: 24px auto;
-  padding: 0 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
 }
-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 20px;
+h1 {
+  font-size: 30px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
 }
-label,
-.label {
-  font-weight: 600;
-  margin-top: 6px;
+h2 {
+  font-size: 18px;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
-label.inline {
-  font-weight: normal;
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
+a {
+  color: var(--accent);
+}
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+.warn {
+  color: var(--warn);
+  font-size: 14px;
 }
 .row {
   display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Page header */
+.page-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.page-head img {
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.card-head .emoji {
+  font-size: 22px;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  flex: none;
+}
+.card-head p {
+  margin: 2px 0 0;
+}
+.field-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+.sub {
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Buttons */
+button,
+.btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+button:hover,
+.btn:hover {
+  border-color: var(--accent);
+}
+button:active,
+.btn:active {
+  transform: scale(0.97);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+  border-color: var(--line);
+}
+.btn-primary,
+button.primary {
+  background: var(--grad);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* Form controls */
+select,
+input[type='text'],
+input[type='password'] {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+select {
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+select:focus,
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input[type='text'],
+input[type='password'] {
+  flex: 1;
+  min-width: 200px;
+}
+input[type='range'] {
+  accent-color: var(--accent);
+  width: 100%;
+}
+
+/* Toggle switch */
+.toggle {
+  display: flex;
   gap: 12px;
   align-items: center;
+  cursor: pointer;
 }
-.row input[type='password'],
-.row input[type='text'] {
-  flex: 1;
+.toggle input {
+  appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.2s ease;
+  margin: 0;
 }
-.providers li {
+.toggle input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+.toggle input:checked {
+  background: var(--grad);
+}
+.toggle input:checked::after {
+  transform: translateX(18px);
+}
+
+/* Segmented control */
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+}
+.seg button {
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Choice cards (levels, themes) */
+.choices {
+  display: grid;
+  gap: 8px;
+}
+.choice {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   align-items: center;
+  text-align: left;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-weight: 400;
+  background: var(--card);
 }
-.muted {
-  opacity: 0.7;
-  font-size: 0.9em;
+.choice[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
-.warn {
-  color: #b45309;
+.choice .tag {
+  font-weight: 800;
+  font-size: 13px;
+  min-width: 34px;
+  text-align: center;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
-.status {
-  min-height: 1.2em;
-  color: #15803d;
+.choice[aria-pressed='true'] .tag {
+  background: var(--grad);
+  color: #fff;
 }
-.placement-word {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 12px 0;
+.choice b {
+  display: block;
+  font-size: 14px;
 }
+.choice span.desc {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Theme previews */
+.themes {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+.theme-card {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 10px;
+  gap: 8px;
+}
+.theme-stage {
+  height: 74px;
+  border-radius: 10px;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 10px;
+  background:
+    radial-gradient(circle at 30% 30%, #6dd5a1 0 18%, transparent 19%),
+    linear-gradient(160deg, #2f80ed, #56ccf2 55%, #b3e5a1 56%, #6bbf59);
+  overflow: hidden;
+}
+.theme-sample {
+  font-size: 15px;
+  line-height: 1.3;
+  padding: 0.15em 0.6em;
+  border-radius: var(--box-radius);
+  background: var(--box-bg);
+  color: var(--box-fg);
+  border: var(--box-border);
+  box-shadow: var(--box-shadow);
+  backdrop-filter: var(--box-blur);
+  font-weight: var(--box-weight);
+  text-shadow: var(--text-shadow);
+}
+.theme-sample u {
+  text-decoration-color: var(--ul-new);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+/* Status chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+.chip.ok {
+  background: color-mix(in srgb, var(--ok) 16%, transparent);
+  color: var(--ok);
+}
+.chip.wait {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+}
+
+/* Saved words (review page) */
 .saved {
   list-style: none;
   padding: 0;
@@ -62,10 +421,43 @@ label.inline {
   gap: 12px;
 }
 .saved li {
-  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* Level test */
+.placement {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+.placement-word {
+  font-size: 40px;
+  font-weight: 800;
+  margin: 4px 0 8px;
+  letter-spacing: -0.02em;
+}
+.progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--grad);
+  transition: width 0.2s ease;
 }

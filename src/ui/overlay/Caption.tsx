@@ -12,7 +12,8 @@ interface CaptionProps {
 
 /**
  * Caption text with each word as a clickable span. Glossed words show the
- * gloss as ruby text above (rule 3: gloss, don't substitute).
+ * gloss in small text centered above (rule 3: gloss, don't substitute). Not
+ * native <ruby>: it stretches the word to the gloss's width.
  */
 export function Caption({ cue, glossed, info, active }: CaptionProps) {
   const parts: preact.ComponentChildren[] = [];
@@ -24,18 +25,16 @@ export function Caption({ cue, glossed, info, active }: CaptionProps) {
     const cls = `w${g ? ` g st-${state}` : ''}${active === i ? ' on' : ''}`;
     parts.push(
       <span class={cls} data-i={i} key={i}>
-        {g ? (
-          <ruby>
-            {cue.text.slice(t.start, t.end)}
-            <rt>{t.gloss}</rt>
-          </ruby>
-        ) : (
-          cue.text.slice(t.start, t.end)
+        {g && (
+          <span class="gl" lang="">
+            {t.gloss}
+          </span>
         )}
+        {cue.text.slice(t.start, t.end)}
       </span>,
     );
     at = t.end;
   });
   if (at < cue.text.length) parts.push(cue.text.slice(at));
-  return <span class="text">{parts}</span>;
+  return <span class={`text${glossed.size ? ' glossy' : ''}`}>{parts}</span>;
 }

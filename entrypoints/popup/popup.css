@@ -1,0 +1,53 @@
+main.popup {
+  width: 320px;
+  padding: 14px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.popup-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.popup-head img {
+  border-radius: 10px;
+}
+.popup-head b {
+  display: block;
+  font-size: 17px;
+}
+.popup-head .muted {
+  font-size: 12.5px;
+}
+.setup {
+  justify-content: center;
+}
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.modes button {
+  justify-content: flex-start;
+  border-radius: 12px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+.modes button:first-child {
+  grid-column: span 2;
+}
+.modes button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.mode-desc {
+  margin: 0;
+  font-size: 12.5px;
+}
+.popup-foot {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}

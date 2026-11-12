@@ -14,13 +14,18 @@ export const overlayCss = `
   transform: translateX(-50%);
   max-width: 90%;
   width: max-content;
-  padding: 0.15em 0.5em;
-  border-radius: 6px;
-  background: rgba(8, 8, 8, 0.6);
-  color: #fff;
+  padding: 0.2em 0.6em;
+  border-radius: var(--box-radius);
+  background: var(--box-bg);
+  color: var(--box-fg);
+  border: var(--box-border);
+  box-shadow: var(--box-shadow);
+  backdrop-filter: var(--box-blur);
+  -webkit-backdrop-filter: var(--box-blur);
+  font-weight: var(--box-weight);
   line-height: 1.35;
   text-align: center;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  text-shadow: var(--text-shadow);
   pointer-events: auto;
   cursor: grab;
   user-select: text;
@@ -29,13 +34,6 @@ export const overlayCss = `
   overflow-wrap: anywhere;
 }
 .box.dragging { cursor: grabbing; user-select: none; }
-.hc .box {
-  background: #000;
-  color: #ffeb3b;
-  text-shadow: none;
-  font-weight: 600;
-  outline: 2px solid #fff;
-}
 .l1 {
   display: none;
   /* Floats above the caption so revealing it never shifts the words under the pointer. */
@@ -46,13 +44,14 @@ export const overlayCss = `
   width: max-content;
   max-width: 100%;
   padding: 0.15em 0.6em;
-  border-radius: 6px;
-  background: rgba(8, 8, 8, 0.75);
+  border-radius: 8px;
+  background: var(--l1-bg);
+  color: var(--l1-fg);
+  text-shadow: none;
   font-size: 0.65em;
   font-weight: 400;
   line-height: 1.35;
 }
-.hc .l1 { background: #000; outline: 1px solid #fff; }
 /* Rule 1: the full L1 line stays hidden until asked for (and out of the way of a word popover). */
 .box:hover .l1 { display: block; }
 .popping .box .l1 { display: none; }
@@ -93,18 +92,26 @@ export const overlayCss = `
 /* Words: clickable; glossed ones get ruby text and a state-colored underline. */
 .w { cursor: pointer; border-radius: 3px; }
 .w:hover, .w.on { background: rgba(255, 255, 255, 0.18); }
-.g { text-decoration: underline 2px; text-underline-offset: 0.18em; }
-.g.st-new, .g.st-seen { text-decoration-color: #4fc3f7; }
-.g.st-learning { text-decoration-color: #ffb74d; }
-ruby { ruby-position: over; }
-rt {
-  font-size: 0.42em;
-  font-weight: 500;
-  color: #e0e0e0;
+.g { text-decoration: underline 2px; text-underline-offset: 0.18em; text-decoration-skip-ink: none; }
+.g.st-new, .g.st-seen { text-decoration-color: var(--ul-new); }
+.g.st-learning { text-decoration-color: var(--ul-learning); }
+.g { position: relative; display: inline-block; text-indent: 0; }
+.gl {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 0.15em);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.48em;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--rt);
+  text-shadow: var(--gl-shadow);
   letter-spacing: 0;
-  padding-bottom: 0.1em;
+  pointer-events: none;
 }
-.hc rt { color: #fff; }
+/* Room above the line for glosses. */
+.text.glossy { display: inline-block; padding-top: 0.55em; line-height: 1.75; }
 .box { line-height: 1.6; }
 .pop {
   position: absolute;

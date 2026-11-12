@@ -1,10 +1,13 @@
 import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { browser } from 'wxt/browser';
-import { PLAYBACK_PRESETS, type PlaybackPreset } from '@/src/core/playback';
-import type { Settings } from '@/src/core/settings';
-import { PRESET_SHORT } from '@/src/ui/presets';
+import { PLAYBACK_PRESETS } from '@/src/core/playback';
+import { LANGUAGES, type Settings } from '@/src/core/settings';
+import { PRESET_INFO } from '@/src/ui/presets';
+import { Toggle } from '@/src/ui/settings/kit';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
+import '@/src/ui/settings/page.css';
+import './popup.css';
 
 const isYouTube = (url?: string) => !!url && /^https?:\/\/([^/]+\.)?youtube\.com\//.test(url);
 
@@ -13,15 +16,20 @@ async function activeTab() {
   return tab;
 }
 
+const openPage = (path: '/welcome.html' | '/review.html') =>
+  void browser.tabs.create({ url: browser.runtime.getURL(path) });
+
 function Popup() {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [s, setS] = useState<Settings | null>(null);
   const [tabUrl, setTabUrl] = useState<string | undefined>();
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    void loadSettings().then(setSettings);
+    void loadSettings().then(setS);
     void activeTab().then((t) => setTabUrl(t?.url));
   }, []);
+
+  const update = (patch: Partial<Settings>) => void saveSettings(patch).then(setS);
 
   const showOnPage = async () => {
     const tab = await activeTab();
@@ -32,71 +40,74 @@ function Popup() {
         func: () => document.querySelector('video') !== null,
       });
       if (!probe?.result) {
-        setMessage('No video found on this page.');
+        setMessage('No video on this page. 🤷');
         return;
       }
       await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['/html5.js'] });
-      setMessage('Captions on. Turn on the video’s own subtitles if nothing shows.');
+      setMessage('Captions on! Turn on the video’s own subtitles if nothing shows.');
     } catch {
       setMessage('SLang can’t run on this page.');
     }
   };
 
+  if (!s) return null;
+
   return (
-    <main style={{ minWidth: '240px', fontFamily: 'system-ui, sans-serif', fontSize: '14px' }}>
-      <h1 style={{ fontSize: '16px', margin: '4px 0 10px' }}>SLang</h1>
-      {settings && (
-        <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={settings.overlayEnabled}
-            onChange={(e) =>
-              void saveSettings({ overlayEnabled: e.currentTarget.checked }).then(setSettings)
-            }
-          />
-          Captions overlay
-        </label>
+    <main class="popup">
+      <header class="popup-head">
+        <img src="/icon/48.png" width="34" height="34" alt="" />
+        <div>
+          <b>SLang</b>
+          <span class="muted">
+            Learning {LANGUAGES[s.targetLang]} · level {s.level}
+          </span>
+        </div>
+      </header>
+
+      {!s.setupDone && (
+        <button class="primary setup" onClick={() => openPage('/welcome.html')}>
+          ✨ Finish setting up (5 min)
+        </button>
       )}
-      {settings && (
-        <label style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '8px' }}>
-          Mode
-          <select
-            value={settings.playbackPreset}
-            onChange={(e) =>
-              void saveSettings({
-                playbackPreset: e.currentTarget.value as PlaybackPreset,
-              }).then(setSettings)
-            }
-          >
-            {PLAYBACK_PRESETS.map((p) => (
-              <option key={p} value={p}>
-                {PRESET_SHORT[p]}
-              </option>
-            ))}
-          </select>
-        </label>
+
+      <Toggle checked={s.overlayEnabled} onChange={(v) => update({ overlayEnabled: v })}>
+        Captions on videos
+      </Toggle>
+
+      <div class="stack" style={{ gap: '6px' }}>
+        <span class="field-label">Mode</span>
+        <div class="modes" role="radiogroup" aria-label="Mode">
+          {PLAYBACK_PRESETS.map((p) => (
+            <button
+              key={p}
+              role="radio"
+              aria-checked={s.playbackPreset === p}
+              aria-pressed={s.playbackPreset === p}
+              title={PRESET_INFO[p].desc}
+              onClick={() => update({ playbackPreset: p })}
+            >
+              <span aria-hidden="true">{PRESET_INFO[p].emoji}</span> {PRESET_INFO[p].label}
+            </button>
+          ))}
+        </div>
+        <p class="muted mode-desc">{PRESET_INFO[s.playbackPreset].desc}</p>
+      </div>
+
+      {isYouTube(tabUrl) ? (
+        <p class="muted">▶ Running on YouTube automatically.</p>
+      ) : (
+        <button onClick={() => void showOnPage()}>Show captions on this page</button>
       )}
-      <p style={{ margin: '10px 0' }}>
-        {isYouTube(tabUrl) ? (
-          <span style={{ opacity: 0.7 }}>Runs automatically on YouTube.</span>
-        ) : (
-          <button onClick={() => void showOnPage()}>Show captions on this page</button>
-        )}
-      </p>
-      {message && <p style={{ margin: '0 0 10px' }}>{message}</p>}
-      {settings && !settings.setupDone && (
-        <p style={{ margin: '0 0 10px' }}>
-          <button
-            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/welcome.html') })}
-          >
-            Finish setup
-          </button>
-        </p>
-      )}
-      <button onClick={() => browser.runtime.openOptionsPage()}>Settings</button>{' '}
-      <button onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/review.html') })}>
-        Review
-      </button>
+      {message && <p class="muted">{message}</p>}
+
+      <footer class="popup-foot">
+        <button class="btn-ghost" onClick={() => openPage('/review.html')}>
+          ⭐ Saved words
+        </button>
+        <button class="btn-ghost" onClick={() => void browser.runtime.openOptionsPage()}>
+          ⚙️ Settings
+        </button>
+      </footer>
     </main>
   );
 }

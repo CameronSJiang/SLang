@@ -7,6 +7,7 @@ import type { CaptionMode } from '../../core/playback';
 import { CAPTION_POSITION_RANGE, LANGUAGES, type Settings } from '../../core/settings';
 import type { AnnotatedCue, Cue, Token } from '../../core/types';
 import { Caption } from './Caption';
+import { THEMES } from './themes';
 import { WordPopover, type WordAction } from './WordPopover';
 
 /** A cue must be on screen this long (video time) without a lookup to count as exposure. */
@@ -22,7 +23,7 @@ export interface OverlayProps {
     | 'targetLang'
     | 'nativeLang'
     | 'captionFontSize'
-    | 'captionHighContrast'
+    | 'captionTheme'
     | 'captionPosition'
     | 'glossDensity'
   >;
@@ -128,6 +129,8 @@ export function Overlay({
   /** Caption position while dragging (null = not dragging); state only to re-render. */
   const [dragPos, setDragPos] = useState<number | null>(null);
   const [pop, setPop] = useState<Popover | null>(null);
+  /** The cue under the pointer while a press/drag is in progress: keep it on screen until release. */
+  const [held, setHeld] = useState<Cue | null>(null);
   const shown = useRef<{ id: string; enter: number; lookedUp: boolean } | null>(null);
 
   // Exposure: when the active cue changes, credit the previous one if it was watched long enough.
@@ -155,7 +158,7 @@ export function Overlay({
 
   const openCue = pop ? annotations?.get(pop.cueId) : undefined;
   // While a word popover is open the video is paused; keep showing that cue.
-  const cue = openCue ?? (index >= 0 ? state.cues[index] : undefined);
+  const cue = openCue ?? (index >= 0 ? state.cues[index] : undefined) ?? held ?? undefined;
   const ann = cue ? annotations?.get(cue.id) : undefined;
   const info = (lemma: string) => wordInfo?.(lemma);
   const glossed = new Set(
@@ -201,6 +204,7 @@ export function Overlay({
     if (e.button !== 0) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const wordEl = (e.target as Element | null)?.closest?.('[data-i]');
+    setHeld(cue ?? null);
     gesture.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -222,6 +226,7 @@ export function Overlay({
   const onPointerUp = (e: PointerEvent) => {
     const g = gesture.current;
     gesture.current = null;
+    setHeld(null);
     if (!g) return;
     e.stopPropagation();
     if (g.moved) {
@@ -237,7 +242,8 @@ export function Overlay({
   return (
     <div
       ref={rootRef}
-      class={`root${settings.captionHighContrast ? ' hc' : ''}${pop ? ' popping' : ''}`}
+      class={`root${pop ? ' popping' : ''}`}
+      style={THEMES[settings.captionTheme].vars}
     >
       {showNotice && dismissed !== state.videoId && (
         <div class="notice" onClick={stop} onMouseDown={stop} onDblClick={stop}>

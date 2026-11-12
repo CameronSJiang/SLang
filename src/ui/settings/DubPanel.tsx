@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { voicesFor } from '@/src/core/dub';
-import { PLAYBACK_PRESETS, type PlaybackPreset } from '@/src/core/playback';
+import { PLAYBACK_PRESETS } from '@/src/core/playback';
 import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { speak } from '@/src/ui/tts';
-import { PRESET_LABELS } from '@/src/ui/presets';
+import { PRESET_INFO } from '@/src/ui/presets';
 
 const SAMPLE: Record<string, string> = {
   es: 'Hola, este vídeo ahora está doblado al español.',
@@ -29,57 +29,71 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
     voices.find((v) => v.voiceURI === s.dubVoice) ?? voices.find((v) => v.localService);
 
   return (
-    <section>
-      <label for="preset">What to play</label>
-      <select
-        id="preset"
-        value={s.playbackPreset}
-        onChange={(e) => update({ playbackPreset: e.currentTarget.value as PlaybackPreset })}
-      >
+    <div class="stack">
+      <span class="field-label">What to play</span>
+      <div class="choices">
         {PLAYBACK_PRESETS.map((p) => (
-          <option key={p} value={p}>
-            {PRESET_LABELS[p]}
-          </option>
-        ))}
-      </select>
-      <p class="muted">
-        You can also switch this from the SLang toolbar button while a video plays.
-      </p>
-
-      <label for="voice">Dub voice ({LANGUAGES[s.targetLang]})</label>
-      {voices.length ? (
-        <div class="row">
-          <select
-            id="voice"
-            value={chosen?.voiceURI ?? ''}
-            onChange={(e) => update({ dubVoice: e.currentTarget.value || null })}
-          >
-            {!chosen && <option value="">Choose a voice…</option>}
-            {voices.map((v) => (
-              <option key={v.voiceURI} value={v.voiceURI}>
-                {v.name}
-                {v.localService ? '' : ' (online — sends lines to Google)'}
-              </option>
-            ))}
-          </select>
           <button
-            onClick={() =>
-              chosen &&
-              speak(SAMPLE[s.targetLang] ?? SAMPLE.es ?? '', s.targetLang, chosen.voiceURI)
-            }
+            key={p}
+            class="choice"
+            role="radio"
+            aria-checked={s.playbackPreset === p}
+            aria-pressed={s.playbackPreset === p}
+            onClick={() => update({ playbackPreset: p })}
           >
-            Test voice
+            <span class="tag" aria-hidden="true">
+              {PRESET_INFO[p].emoji}
+            </span>
+            <span>
+              <b>{PRESET_INFO[p].label}</b>
+              <span class="desc">{PRESET_INFO[p].desc}</span>
+            </span>
           </button>
-        </div>
-      ) : (
-        <p class="warn">
-          No {LANGUAGES[s.targetLang]} voices found. On a Mac, add one in System Settings →
-          Accessibility → Spoken Content → System voice → Manage Voices, then reload this page.
+        ))}
+      </div>
+      <p class="muted">Switch any time from the SLang button in your toolbar.</p>
+
+      <div class="sub">
+        <span class="field-label">Dub voice ({LANGUAGES[s.targetLang]})</span>
+        {voices.length ? (
+          <div class="row">
+            <select
+              aria-label="Dub voice"
+              value={chosen?.voiceURI ?? ''}
+              onChange={(e) => update({ dubVoice: e.currentTarget.value || null })}
+            >
+              {!chosen && <option value="">Choose a voice…</option>}
+              {voices.map((v) => (
+                <option key={v.voiceURI} value={v.voiceURI}>
+                  {v.name}
+                  {v.localService ? '' : ' (online — sends lines to Google)'}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() =>
+                chosen &&
+                speak(SAMPLE[s.targetLang] ?? SAMPLE.es ?? '', s.targetLang, chosen.voiceURI)
+              }
+            >
+              ▶ Hear it
+            </button>
+          </div>
+        ) : (
+          <p class="warn">
+            No {LANGUAGES[s.targetLang]} voices yet. On a Mac: System Settings → Accessibility →
+            Spoken Content → System voice → Manage Voices… → {LANGUAGES[s.targetLang]}. Then reload
+            this page.
+          </p>
+        )}
+        {chosen && !chosen.localService && (
+          <p class="warn">This voice runs online: dubbed lines are sent to Google to be spoken.</p>
+        )}
+        <p class="muted">
+          Tip: Mac “Enhanced” and “Premium” voices sound far less robotic. Grab one in Manage
+          Voices.
         </p>
-      )}
-      {chosen && !chosen.localService && (
-        <p class="warn">This voice runs online: dubbed lines are sent to Google to be spoken.</p>
-      )}
-    </section>
+      </div>
+    </div>
   );
 }

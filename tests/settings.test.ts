@@ -18,7 +18,7 @@ describe('normalizeSettings', () => {
       vocabSize: 2400,
       overlayEnabled: false,
       captionFontSize: 30,
-      captionHighContrast: true,
+      captionTheme: 'paper',
       captionPosition: 40,
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
@@ -34,7 +34,7 @@ describe('normalizeSettings', () => {
       vocabSize: 2400,
       overlayEnabled: false,
       captionFontSize: 30,
-      captionHighContrast: true,
+      captionTheme: 'paper',
       captionPosition: 40,
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
@@ -47,6 +47,11 @@ describe('normalizeSettings', () => {
     expect(s.targetLang).toBe('es');
     expect(s.glossDensity).toBe('auto');
     expect(s.level).toBe('A2');
+  });
+
+  it('migrates the old high-contrast switch to the bold theme', () => {
+    expect(normalizeSettings({ captionHighContrast: true }).captionTheme).toBe('bold');
+    expect(normalizeSettings({}).captionTheme).toBe('slang');
   });
 
   it('clamps caption numbers', () => {
