@@ -4,6 +4,8 @@ import { PLAYBACK_PRESETS } from '@/src/core/playback';
 import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { speak } from '@/src/ui/tts';
 import { PRESET_INFO } from '@/src/ui/presets';
+import { kokoroSupports } from '@/src/tts/voices';
+import { NaturalVoice } from './NaturalVoice';
 
 const SAMPLE: Record<string, string> = {
   es: 'Hola, este vídeo ahora está doblado al español.',
@@ -53,47 +55,93 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
       </div>
       <p class="muted">Switch any time from the SLang button in your toolbar.</p>
 
-      <div class="sub">
-        <span class="field-label">Dub voice ({LANGUAGES[s.targetLang]})</span>
-        {voices.length ? (
-          <div class="row">
-            <select
-              aria-label="Dub voice"
-              value={chosen?.voiceURI ?? ''}
-              onChange={(e) => update({ dubVoice: e.currentTarget.value || null })}
-            >
-              {!chosen && <option value="">Choose a voice…</option>}
-              {voices.map((v) => (
-                <option key={v.voiceURI} value={v.voiceURI}>
-                  {v.name}
-                  {v.localService ? '' : ' (online — sends lines to Google)'}
-                </option>
-              ))}
-            </select>
+      {kokoroSupports(s.targetLang) && (
+        <div class="sub">
+          <span class="field-label">Dub voice</span>
+          <div class="choices">
             <button
-              onClick={() =>
-                chosen &&
-                speak(SAMPLE[s.targetLang] ?? SAMPLE.es ?? '', s.targetLang, chosen.voiceURI)
-              }
+              class="choice"
+              role="radio"
+              aria-checked={s.dubEngine === 'natural'}
+              aria-pressed={s.dubEngine === 'natural'}
+              onClick={() => update({ dubEngine: 'natural' })}
             >
-              ▶ Hear it
+              <span class="tag" aria-hidden="true">
+                🌟
+              </span>
+              <span>
+                <b>Natural (beta)</b>
+                <span class="desc">
+                  An AI voice that runs on your computer. Free, private, and much less robotic.
+                </span>
+              </span>
+            </button>
+            <button
+              class="choice"
+              role="radio"
+              aria-checked={s.dubEngine === 'system'}
+              aria-pressed={s.dubEngine === 'system'}
+              onClick={() => update({ dubEngine: 'system' })}
+            >
+              <span class="tag" aria-hidden="true">
+                💻
+              </span>
+              <span>
+                <b>System voices</b>
+                <span class="desc">
+                  The voices built into your computer. Instant, a bit robotic.
+                </span>
+              </span>
             </button>
           </div>
-        ) : (
-          <p class="warn">
-            No {LANGUAGES[s.targetLang]} voices yet. On a Mac: System Settings → Accessibility →
-            Spoken Content → System voice → Manage Voices… → {LANGUAGES[s.targetLang]}. Then reload
-            this page.
+          {s.dubEngine === 'natural' && <NaturalVoice s={s} update={update} />}
+        </div>
+      )}
+      {(s.dubEngine === 'system' || !kokoroSupports(s.targetLang)) && (
+        <div class="sub">
+          <span class="field-label">System voice ({LANGUAGES[s.targetLang]})</span>
+          {voices.length ? (
+            <div class="row">
+              <select
+                aria-label="Dub voice"
+                value={chosen?.voiceURI ?? ''}
+                onChange={(e) => update({ dubVoice: e.currentTarget.value || null })}
+              >
+                {!chosen && <option value="">Choose a voice…</option>}
+                {voices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name}
+                    {v.localService ? '' : ' (online — sends lines to Google)'}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() =>
+                  chosen &&
+                  speak(SAMPLE[s.targetLang] ?? SAMPLE.es ?? '', s.targetLang, chosen.voiceURI)
+                }
+              >
+                ▶ Hear it
+              </button>
+            </div>
+          ) : (
+            <p class="warn">
+              No {LANGUAGES[s.targetLang]} voices yet. On a Mac: System Settings → Accessibility →
+              Spoken Content → System voice → Manage Voices… → {LANGUAGES[s.targetLang]}. Then
+              reload this page.
+            </p>
+          )}
+          {chosen && !chosen.localService && (
+            <p class="warn">
+              This voice runs online: dubbed lines are sent to Google to be spoken.
+            </p>
+          )}
+          <p class="muted">
+            Tip: Mac “Enhanced” and “Premium” voices sound far less robotic. Grab one in Manage
+            Voices.
           </p>
-        )}
-        {chosen && !chosen.localService && (
-          <p class="warn">This voice runs online: dubbed lines are sent to Google to be spoken.</p>
-        )}
-        <p class="muted">
-          Tip: Mac “Enhanced” and “Premium” voices sound far less robotic. Grab one in Manage
-          Voices.
-        </p>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

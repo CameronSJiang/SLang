@@ -12,7 +12,9 @@ disk space and a reasonably recent Mac or PC; without it, captions still work (n
 can use your own Anthropic API key in SLang settings.
 
 Privacy: SLang has no server and no account. Captions and your learning data stay in your browser. The
-only network calls are to the AI provider you choose (none, if you use Chrome's built-in AI).
+only network calls are to the AI provider you choose (none, if you use Chrome's built-in AI). If you turn
+on the Natural dub voice, SLang downloads the Kokoro voice model (~90 MB) once from Hugging Face; the
+voice then runs on your computer and nothing you watch is sent anywhere.
 
 To update: replace the folder with the new one and click the reload ↻ icon on SLang's card in
 `chrome://extensions`. To remove: click **Remove** on that card.

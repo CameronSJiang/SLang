@@ -26,10 +26,17 @@ async function ensureOffscreen(): Promise<void> {
 
 type DistOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-async function call(req: DistOmit<OffscreenRequest, 'target'>): Promise<unknown> {
+export async function callOffscreen(req: DistOmit<OffscreenRequest, 'target'>): Promise<unknown> {
   await ensureOffscreen();
-  const res = (await browser.runtime.sendMessage({ ...req, target: 'offscreen' })) as
-    OffscreenResponse | undefined;
+  let res: OffscreenResponse | undefined;
+  // A just-created document may still be loading its scripts (the voice model runtime is large):
+  // no listener answers yet, so retry briefly.
+  for (let attempt = 0; attempt < 20 && !res; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 250));
+    res = (await browser.runtime
+      .sendMessage({ ...req, target: 'offscreen' })
+      .catch(() => undefined)) as OffscreenResponse | undefined;
+  }
   if (!res) throw new Error('Offscreen document did not answer');
   if (res.ok) return res.value;
   if (res.unavailable) throw new ProviderUnavailableError(res.error);
@@ -43,18 +50,19 @@ export const offscreenChromeAI: LLMProvider = {
   commonCutoff: 300,
   available: async () => {
     try {
-      return (await call({ op: 'available' })) === true;
+      return (await callOffscreen({ op: 'available' })) === true;
     } catch {
       return false;
     }
   },
-  annotate: async (cues, ctx) => (await call({ op: 'annotate', cues, ctx })) as AnnotatedCue[],
+  annotate: async (cues, ctx) =>
+    (await callOffscreen({ op: 'annotate', cues, ctx })) as AnnotatedCue[],
   translateCues: async (cues, from, to) =>
-    (await call({ op: 'translateCues', cues, from, to })) as Cue[],
+    (await callOffscreen({ op: 'translateCues', cues, from, to })) as Cue[],
   translateLines: async (texts, from, to) =>
-    (await call({ op: 'translateLines', texts, from, to })) as string[],
+    (await callOffscreen({ op: 'translateLines', texts, from, to })) as string[],
   translateLine: async (text, from, to) => {
-    const out = (await call({
+    const out = (await callOffscreen({
       op: 'translateCues',
       cues: [{ id: 'l', start: 0, end: 0, text }],
       from,

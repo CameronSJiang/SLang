@@ -11,6 +11,8 @@ import type { TranslationProgress } from '@/src/llm/translationJob';
 import { LexiconClient } from '@/src/storage/lexClient';
 import { extensionAlive, loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
 import { DubEngine, type DubIssue } from '@/src/ui/dub/engine';
+import { KokoroSpeaker } from '@/src/ui/dub/kokoroSpeaker';
+import { kokoroSupports } from '@/src/tts/voices';
 import { mountOverlay, type OverlayHandle } from '@/src/ui/overlay/mount';
 import { setNativeCaptionsHidden } from '@/src/ui/overlay/nativeCaptions';
 
@@ -54,12 +56,16 @@ export default defineContentScript({
     let pendingExposures: string[] = [];
 
     let dub: DubTrack | null = null;
-    let engine: {
-      e: DubEngine;
-      video: HTMLVideoElement;
-      voice: string | null;
-      lang: string;
-    } | null = null;
+    let engine: { e: DubEngine; video: HTMLVideoElement; key: string } | null = null;
+    // Everything that, when changed, needs a new engine/voice.
+    const voiceKey = () =>
+      JSON.stringify([
+        settings.targetLang,
+        settings.dubEngine,
+        settings.dubVoice,
+        settings.kokoroVoice,
+        settings.kokoroSpeed,
+      ]);
     let dubIssue: DubIssue | null = null;
     let lastSpoken = '';
 
@@ -103,7 +109,10 @@ export default defineContentScript({
       const out: string[] = [];
       if (pb.fallback === 'already-target')
         out.push(`This video is already in ${langName()} — showing captions.`);
-      if (pb.fallback === 'nothing-to-dub') out.push('No captions to dub from on this video.');
+      // Only once we know the video truly has no captions (not while they're still loading).
+      if (pb.fallback === 'nothing-to-dub' && state.tracks?.length === 0) {
+        out.push('No captions to dub from on this video.');
+      }
       const p = dub?.progress;
       if (translating && p?.error) {
         out.push(
@@ -117,6 +126,9 @@ export default defineContentScript({
       }
       if (pb.audio === 'dub' && dubIssue === 'blocked')
         out.push('Click the video once so SLang can speak.');
+      if (pb.audio === 'dub' && dubIssue === 'preparing') {
+        out.push('Getting the voice ready… (the first time it downloads, about a minute)');
+      }
       return out;
     };
 
@@ -283,13 +295,7 @@ export default defineContentScript({
         (!!translate || !state.live) &&
         !!v &&
         cues.length > 0;
-      if (
-        engine &&
-        (!want ||
-          engine.video !== v ||
-          engine.voice !== settings.dubVoice ||
-          engine.lang !== settings.targetLang)
-      ) {
+      if (engine && (!want || engine.video !== v || engine.key !== voiceKey())) {
         engine.e.stop();
         engine = null;
       }
@@ -298,23 +304,27 @@ export default defineContentScript({
         return;
       }
       if (!engine) {
+        const onIssue = (issue: DubIssue | null) => {
+          if (issue === dubIssue) return;
+          dubIssue = issue;
+          draw();
+        };
+        const natural = settings.dubEngine === 'natural' && kokoroSupports(settings.targetLang);
         engine = {
           video: v,
-          voice: settings.dubVoice,
-          lang: settings.targetLang,
+          key: voiceKey(),
           e: new DubEngine({
             video: v,
             lang: settings.targetLang,
             voiceURI: settings.dubVoice,
+            ...(natural
+              ? { speaker: new KokoroSpeaker(settings.kokoroVoice, settings.kokoroSpeed, onIssue) }
+              : {}),
             onSpeak: (cue, rate) => {
               lastSpoken = `${cue.id}@${rate.toFixed(2)}`;
               ui?.host.setAttribute('data-dub', lastSpoken);
             },
-            onIssue: (issue) => {
-              if (issue === dubIssue) return;
-              dubIssue = issue;
-              draw();
-            },
+            onIssue,
           }),
         };
       }

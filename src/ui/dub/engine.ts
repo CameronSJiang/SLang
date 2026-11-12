@@ -1,7 +1,9 @@
 /**
- * Speaks dubbed cues in sync with a video using speechSynthesis. Lowers the
- * original audio while speaking, speeds lines up to fit, and briefly pauses
- * the video when a line still overruns into the next one.
+ * Speaks dubbed cues in sync with a video. Lowers the original audio while
+ * speaking, speeds lines up to fit, and briefly pauses the video when a line
+ * still overruns into the next one (or its audio isn't generated yet). The
+ * voice itself is a pluggable Speaker: the browser's speechSynthesis by
+ * default, or on-device Kokoro (see kokoroSpeaker.ts).
  */
 import { findCueIndex } from '../../core/cueIndex';
 import { fitRate, pickVoice } from '../../core/dub';
@@ -11,13 +13,85 @@ import type { Cue } from '../../core/types';
 export const DUCK_LEVEL = 0.15;
 /** Don't start a line we reach more than this late (e.g. after seeking into it). */
 const MAX_LATE_S = 1.0;
+/** How long to hold the video waiting for a line's audio before skipping it. */
+const READY_TIMEOUT_MS = 8000;
+/** Cues to prepare ahead of the playhead. */
+const LOOKAHEAD = 4;
 
-export type DubIssue = 'no-voice' | 'blocked';
+export type DubIssue = 'no-voice' | 'blocked' | 'preparing';
+
+export interface Utterance {
+  stop(): void;
+}
+
+export interface Speaker {
+  /**
+   * Start saying `cue`; call `onEnd` exactly once when it finishes or fails.
+   * `seconds` is the time available at the video's current speed.
+   */
+  say(
+    cue: Cue,
+    seconds: number,
+    videoRate: number,
+    onEnd: () => void,
+  ): Utterance | 'not-ready' | 'no-voice';
+  /** These cues are coming up: start preparing them. */
+  upcoming?(cues: Cue[]): void;
+  /** Resolves when `cue` can be said (after 'not-ready'). */
+  whenReady?(cue: Cue): Promise<void>;
+  dispose?(): void;
+}
+
+/** The browser's built-in voices. */
+export class SystemSpeaker implements Speaker {
+  private readonly synth = globalThis.speechSynthesis;
+  private current: SpeechSynthesisUtterance | null = null;
+
+  constructor(
+    private readonly lang: string,
+    private readonly voiceURI: string | null,
+    private readonly onIssue?: (i: DubIssue | null) => void,
+  ) {}
+
+  say(cue: Cue, seconds: number, videoRate: number, onEnd: () => void) {
+    const synth = this.synth;
+    const voice = synth && pickVoice(synth.getVoices(), this.lang, this.voiceURI);
+    if (!synth || !voice) return 'no-voice' as const;
+    const u = new SpeechSynthesisUtterance(cue.text);
+    u.voice = voice;
+    u.lang = voice.lang;
+    u.rate = fitRate(cue.text, seconds) * videoRate;
+    let ended = false;
+    const end = () => {
+      if (ended) return;
+      ended = true;
+      if (this.current === u) this.current = null;
+      onEnd();
+    };
+    u.onend = end;
+    u.onerror = (e) => {
+      if (e.error === 'not-allowed') this.onIssue?.('blocked');
+      end();
+    };
+    u.onstart = () => this.onIssue?.(null);
+    this.current = u;
+    synth.speak(u);
+    return {
+      stop: () => {
+        ended = true; // a cancelled line doesn't advance the queue
+        if (this.current === u) this.current = null;
+        synth.cancel();
+      },
+    };
+  }
+}
 
 export interface DubEngineOptions {
   video: HTMLVideoElement;
   lang: string;
   voiceURI: string | null;
+  /** Defaults to SystemSpeaker(lang, voiceURI). */
+  speaker?: Speaker;
   /** For tests/diagnostics: a line started (rate = speech rate used). */
   onSpeak?(cue: Cue, rate: number): void;
   onIssue?(issue: DubIssue | null): void;
@@ -26,17 +100,19 @@ export interface DubEngineOptions {
 export class DubEngine {
   private cues: Cue[] = [];
   private lastIndex = -1;
-  private utterance: SpeechSynthesisUtterance | null = null;
+  private current: Utterance | null = null;
   private queued: Cue | null = null;
+  private waitingFor: Cue | null = null;
   private pausedByUs = false;
   private savedVolume: number | null = null;
   private duckedTo: number | null = null;
   private suspended = false;
   private rvfc = 0;
   private stopped = false;
-  private readonly synth = globalThis.speechSynthesis;
+  private readonly speaker: Speaker;
 
   constructor(private readonly o: DubEngineOptions) {
+    this.speaker = o.speaker ?? new SystemSpeaker(o.lang, o.voiceURI, (i) => o.onIssue?.(i));
     const v = o.video;
     v.addEventListener('timeupdate', this.tick);
     v.addEventListener('seeking', this.reset);
@@ -59,6 +135,7 @@ export class DubEngine {
   stop(): void {
     this.stopped = true;
     this.reset();
+    this.speaker.dispose?.();
     const v = this.o.video;
     v.removeEventListener('timeupdate', this.tick);
     v.removeEventListener('seeking', this.reset);
@@ -74,9 +151,21 @@ export class DubEngine {
   };
 
   private onPause = () => {
-    // Our own overrun pause keeps the current line going; a user pause stops it.
+    // Our own holds keep the current line going; a user pause stops it.
     if (!this.pausedByUs) this.reset();
   };
+
+  private hold() {
+    if (this.pausedByUs) return;
+    this.pausedByUs = true;
+    this.o.video.pause();
+  }
+
+  private release() {
+    if (!this.pausedByUs) return;
+    this.pausedByUs = false;
+    void this.o.video.play();
+  }
 
   private tick = () => {
     const v = this.o.video;
@@ -84,13 +173,15 @@ export class DubEngine {
     const i = findCueIndex(this.cues, v.currentTime);
     if (i === this.lastIndex) return;
     this.lastIndex = i;
+    // Prepare what's coming (from the current cue, or the next one in a gap).
+    const from = i >= 0 ? i + 1 : this.cues.findIndex((c) => c.start > v.currentTime);
+    if (from >= 0) this.speaker.upcoming?.(this.cues.slice(from, from + LOOKAHEAD));
     const cue = this.cues[i];
     if (!cue || v.currentTime - cue.start > MAX_LATE_S) return;
-    if (this.utterance) {
-      // Previous line is still talking: hold the video until it finishes, then say this one.
+    if (this.current || this.waitingFor) {
+      // Previous line is still talking (or still being prepared): hold the video, then say this one.
       this.queued = cue;
-      this.pausedByUs = true;
-      v.pause();
+      this.hold();
       return;
     }
     this.speak(cue);
@@ -99,58 +190,72 @@ export class DubEngine {
   /** Stop talking and resync to wherever the playhead is. */
   private reset = () => {
     this.queued = null;
+    this.waitingFor = null;
     this.lastIndex = -1;
-    if (this.utterance) {
-      this.utterance = null;
-      this.synth?.cancel();
-    }
+    const cur = this.current;
+    this.current = null;
+    cur?.stop();
     this.unduck();
-    if (this.pausedByUs) {
-      // We were holding the video for an overrunning line; let it play again.
-      this.pausedByUs = false;
-      void this.o.video.play();
-    }
+    this.release();
   };
 
+  /** The current line finished (or failed): say the queued one or let the video go. */
+  private next() {
+    const q = this.queued;
+    this.queued = null;
+    if (q) {
+      this.speak(q);
+    } else {
+      this.unduck();
+      this.release();
+    }
+  }
+
   private speak(cue: Cue) {
-    const synth = this.synth;
-    if (!synth || !cue.text) return;
-    const voice = pickVoice(synth.getVoices(), this.o.lang, this.o.voiceURI);
-    if (!voice) {
+    if (!cue.text) return this.next();
+    const v = this.o.video;
+    const videoRate = v.playbackRate || 1;
+    const seconds = (cue.end - cue.start) / videoRate;
+    let mine: Utterance | null = null;
+    const r = this.speaker.say(cue, seconds, videoRate, () => {
+      if (this.current !== mine) return; // cancelled
+      this.current = null;
+      this.next();
+    });
+    if (r === 'no-voice') {
       this.o.onIssue?.('no-voice');
       return;
     }
-    const v = this.o.video;
-    const rate = fitRate(cue.text, (cue.end - cue.start) / (v.playbackRate || 1));
-    const u = new SpeechSynthesisUtterance(cue.text);
-    u.voice = voice;
-    u.lang = voice.lang;
-    u.rate = rate * (v.playbackRate || 1);
-    const done = () => {
-      if (this.utterance !== u) return;
-      this.utterance = null;
-      const next = this.queued;
-      this.queued = null;
-      if (next) {
-        this.speak(next);
-      } else {
-        this.unduck();
-      }
-      if (this.pausedByUs) {
-        this.pausedByUs = false;
-        void v.play();
-      }
-    };
-    u.onend = done;
-    u.onerror = (e) => {
-      if (e.error === 'not-allowed') this.o.onIssue?.('blocked');
-      done();
-    };
-    u.onstart = () => this.o.onIssue?.(null);
-    this.utterance = u;
+    if (r === 'not-ready') {
+      // Audio still generating: hold the video until it's ready (or give up on this line).
+      this.waitingFor = cue;
+      this.hold();
+      this.o.onIssue?.('preparing');
+      const ready = this.speaker.whenReady?.(cue) ?? Promise.reject(new Error('no whenReady'));
+      const timeout = new Promise<never>((_, rej) =>
+        setTimeout(() => rej(new Error('timeout')), READY_TIMEOUT_MS),
+      );
+      Promise.race([ready, timeout]).then(
+        () => {
+          if (this.waitingFor !== cue) return; // reset meanwhile
+          this.waitingFor = null;
+          this.o.onIssue?.(null);
+          this.speak(cue);
+        },
+        () => {
+          if (this.waitingFor !== cue) return;
+          this.waitingFor = null;
+          this.o.onIssue?.(null);
+          this.next();
+        },
+      );
+      return;
+    }
+    mine = r;
+    this.current = r;
     this.duck();
-    synth.speak(u);
-    this.o.onSpeak?.(cue, rate);
+    this.release();
+    this.o.onSpeak?.(cue, fitRate(cue.text, seconds));
   }
 
   private duck() {

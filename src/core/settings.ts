@@ -19,6 +19,10 @@ import { PLAYBACK_PRESETS, type PlaybackPreset } from './playback';
 
 export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
 
+export const DUB_ENGINES = ['system', 'natural'] as const;
+export type DubEngineId = (typeof DUB_ENGINES)[number];
+export const KOKORO_SPEED_RANGE = [0.8, 1.3] as const;
+
 export const CAPTION_THEMES = ['slang', 'glass', 'classic', 'paper', 'outline', 'bold'] as const;
 export type CaptionTheme = (typeof CAPTION_THEMES)[number];
 export type Level = (typeof LEVELS)[number];
@@ -44,6 +48,12 @@ export interface Settings {
   playbackPreset: PlaybackPreset;
   /** speechSynthesis voiceURI for dubbing; null = best on-device voice. */
   dubVoice: string | null;
+  /** Which dub voices: the browser's own, or the on-device Kokoro model. */
+  dubEngine: DubEngineId;
+  /** Kokoro voice id (e.g. ef_dora). */
+  kokoroVoice: string;
+  /** Kokoro speaking speed (0.8–1.3). */
+  kokoroSpeed: number;
   /** The first-run welcome guide was finished. */
   setupDone: boolean;
 }
@@ -65,6 +75,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   captionPosition: 10,
   playbackPreset: 'auto',
   dubVoice: null,
+  dubEngine: 'system',
+  kokoroVoice: 'ef_dora',
+  kokoroSpeed: 1.05,
   setupDone: false,
 });
 
@@ -117,6 +130,12 @@ export function normalizeSettings(raw: unknown): Settings {
       ? r.playbackPreset
       : d.playbackPreset,
     dubVoice: typeof r.dubVoice === 'string' && r.dubVoice ? r.dubVoice : null,
+    dubEngine: isOneOf(DUB_ENGINES, r.dubEngine) ? r.dubEngine : d.dubEngine,
+    kokoroVoice:
+      typeof r.kokoroVoice === 'string' && /^[a-z]{2}_[a-z]+$/.test(r.kokoroVoice)
+        ? r.kokoroVoice
+        : d.kokoroVoice,
+    kokoroSpeed: clampNum(r.kokoroSpeed, KOKORO_SPEED_RANGE, d.kokoroSpeed),
     setupDone: r.setupDone === true,
   };
 }

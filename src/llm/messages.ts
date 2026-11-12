@@ -3,6 +3,7 @@ import type { AnnotatedCue, Cue } from '../core/types';
 import type { AnnotationProgress } from './annotator';
 import type { TranslationProgress } from './translationJob';
 import type { AnnotateContext } from './types';
+import type { TtsRequest } from '../tts/messages';
 
 export const ANNOTATE_PORT = 'slang-annotate';
 
@@ -34,6 +35,7 @@ export type OffscreenRequest = { target: 'offscreen' } & (
   | { op: 'annotate'; cues: Cue[]; ctx: AnnotateContext }
   | { op: 'translateCues'; cues: Cue[]; from: string; to: string }
   | { op: 'translateLines'; texts: string[]; from: string; to: string }
+  | TtsRequest
 );
 
 export type OffscreenResponse =

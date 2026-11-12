@@ -3,6 +3,29 @@ import { browser } from 'wxt/browser';
 import { ChromeAIProvider } from '@/src/llm/chromeAI';
 import type { OffscreenRequest, OffscreenResponse } from '@/src/llm/messages';
 import { InvalidResponseError, ProviderUnavailableError } from '@/src/llm/types';
+import { kokoroThreads, loadKokoro, synthesize, type KokoroVoice } from '@/src/tts/kokoro';
+import { toBase64, type TtsProgressEvent, type TtsStatus } from '@/src/tts/messages';
+
+let ttsState: TtsStatus = { loaded: false, loading: false };
+
+function loadTts(): Promise<unknown> {
+  if (ttsState.loaded) return Promise.resolve();
+  ttsState = { loaded: false, loading: true };
+  return loadKokoro((fraction) => {
+    const e: TtsProgressEvent = { type: 'slang-tts-progress', fraction };
+    void browser.runtime.sendMessage(e).catch(() => {});
+  }).then(
+    () => (ttsState = { loaded: true, loading: false }),
+    (e: unknown) => {
+      ttsState = {
+        loaded: false,
+        loading: false,
+        error: e instanceof Error ? e.message : String(e),
+      };
+      throw e;
+    },
+  );
+}
 
 const provider = new ChromeAIProvider();
 
@@ -16,6 +39,16 @@ async function handle(req: OffscreenRequest): Promise<unknown> {
       return provider.translateCues(req.cues, req.from, req.to);
     case 'translateLines':
       return provider.translateLines(req.texts, req.from, req.to);
+    case 'tts.status':
+      return { ...ttsState, threads: kokoroThreads() };
+    case 'tts.load':
+      await loadTts();
+      return ttsState;
+    case 'tts.speak': {
+      await loadTts();
+      const clip = await synthesize(req.text, req.voice as KokoroVoice, req.speed);
+      return { wav: toBase64(clip.wav), seconds: clip.seconds };
+    }
   }
 }
 

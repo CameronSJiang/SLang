@@ -88,7 +88,8 @@ function Welcome() {
   const native = LANGUAGES[s.nativeLang];
   const aiReady =
     ai?.prompt === 'available' || ai?.translator === 'available' || !!s.anthropicApiKey;
-  const hasVoice = s.dubVoice !== null || !!pickVoice(voices, s.targetLang, null);
+  const hasVoice =
+    s.dubEngine === 'natural' || s.dubVoice !== null || !!pickVoice(voices, s.targetLang, null);
   const levelSet = s.vocabSize !== null;
   const done = [s.targetLang !== s.nativeLang, aiReady, hasVoice, levelSet, s.setupDone];
   const progress = done.filter(Boolean).length;

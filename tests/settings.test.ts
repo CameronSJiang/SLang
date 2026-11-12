@@ -23,6 +23,9 @@ describe('normalizeSettings', () => {
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
       setupDone: true,
+      dubEngine: 'natural',
+      kokoroVoice: 'em_alex',
+      kokoroSpeed: 1.2,
     });
     expect(s).toEqual({
       targetLang: 'ko',
@@ -39,6 +42,9 @@ describe('normalizeSettings', () => {
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
       setupDone: true,
+      dubEngine: 'natural',
+      kokoroVoice: 'em_alex',
+      kokoroSpeed: 1.2,
     });
   });
 

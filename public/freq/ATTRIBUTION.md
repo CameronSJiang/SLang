@@ -9,3 +9,10 @@ The wordfreq data is licensed under the Creative Commons Attribution-ShareAlike 
 license (https://creativecommons.org/licenses/by-sa/4.0/). These derived lists (lowercased,
 filtered to word-like entries, truncated to 20,000 words) are distributed under the same
 license.
+
+# Natural dub voice
+
+The optional Natural voice uses **Kokoro-82M** (https://huggingface.co/hexgrad/Kokoro-82M, ONNX export
+`onnx-community/Kokoro-82M-v1.0-ONNX`), Apache-2.0, downloaded at runtime and run on-device with
+transformers.js (Apache-2.0) and onnxruntime-web (MIT, bundled in `ort/`). The inference steps follow
+kokoro-js (Apache-2.0). Spanish phonemes come from SLang's own rules (`src/core/g2p/es.ts`).

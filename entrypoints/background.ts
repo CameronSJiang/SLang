@@ -9,7 +9,8 @@ import { TranslationJob } from '@/src/llm/translationJob';
 import { AnthropicProvider } from '@/src/llm/anthropic';
 import { ANNOTATE_PORT, type AnnotateEvent, type AnnotateRequest } from '@/src/llm/messages';
 import { nullProvider } from '@/src/llm/null';
-import { offscreenChromeAI } from '@/src/llm/offscreenProvider';
+import { callOffscreen, offscreenChromeAI } from '@/src/llm/offscreenProvider';
+import type { TtsRequest } from '@/src/tts/messages';
 import type { LLMProvider } from '@/src/llm/types';
 import type { Settings } from '@/src/core/settings';
 
@@ -72,6 +73,18 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
+    const tts = msg as ({ target?: string } & TtsRequest) | undefined;
+    if (tts?.target === 'background' && tts.op.startsWith('tts.')) {
+      // Kokoro runs in the offscreen document; relay and answer {ok, value | error}.
+      const req = { ...tts };
+      delete req.target;
+      callOffscreen(req as TtsRequest).then(
+        (value) => sendResponse({ ok: true, value }),
+        (e: unknown) =>
+          sendResponse({ ok: false, error: e instanceof Error ? e.message : String(e) }),
+      );
+      return true;
+    }
     const req = msg as LexRequest | undefined;
     if (req?.target !== 'background') return false;
     handleLex(req).then(sendResponse, (e: unknown) =>

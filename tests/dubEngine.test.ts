@@ -151,3 +151,41 @@ describe('DubEngine', () => {
     expect(synth.spoken).toHaveLength(0);
   });
 });
+
+describe('DubEngine with a speaker that prepares audio', () => {
+  it('holds the video until a line is ready, then says it; prefetches upcoming lines', async () => {
+    let ready = false;
+    let release: () => void = () => {};
+    const said: string[] = [];
+    const prepared: string[][] = [];
+    const speaker = {
+      say: (cue: Cue, _s: number, _r: number, onEnd: () => void) => {
+        if (!ready) return 'not-ready' as const;
+        said.push(cue.text);
+        release = onEnd;
+        return { stop: () => {} };
+      },
+      upcoming: (cs: Cue[]) => prepared.push(cs.map((c) => c.id)),
+      whenReady: () => new Promise<void>((res) => setTimeout(() => res(), 5)),
+    };
+    const v = new FakeVideo();
+    const e = new DubEngine({
+      video: v as unknown as HTMLVideoElement,
+      lang: 'es',
+      voiceURI: null,
+      speaker,
+    });
+    e.setCues(cues);
+    v.at(1.05);
+    expect(prepared[0]).toEqual(['b', 'c']);
+    expect(v.paused).toBe(true); // waiting for audio
+    ready = true;
+    await new Promise((r) => setTimeout(r, 20));
+    expect(said).toEqual(['Hola a todos.']);
+    expect(v.paused).toBe(false);
+    expect(v.volume).toBeCloseTo(DUCK_LEVEL);
+    release();
+    expect(v.volume).toBe(1);
+    e.stop();
+  });
+});
