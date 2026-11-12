@@ -8,20 +8,10 @@ ruby glosses, word popover (Save/Known/Ignore, TTS), placement test. Freq lists:
 
 ## M2.5 — Dub mode ✅
 
-**Done**
-
-- `core/playback.ts`: presets (Auto / Captions / Dub / Dub + captions / Bilingual) → audio + caption layers;
-  spoken language from the auto-generated track; `pickSource` (native language, then human-made).
-- `llm/translationJob.ts`: source → L2, playhead-first, cached `site:video:src>l2:dub:1`; tries providers in
-  order (Chrome Translator, then Anthropic). Dubbed lines then go through annotation (`<video>~dub`).
-- `ui/dub/engine.ts`: speechSynthesis per cue, rate to fit (≤1.6×), holds the video on overrun, ducks to 15%,
-  resyncs on seek/pause/rate/ads. Popup mode switcher; options: default mode, voice picker + test.
-- 85 unit tests (engine with fake video/synth); headless e2e 13/13 for dub + earlier suites.
-
-**Decisions**
-
-- Only speed lines up (1.0–1.6×), never slow down (spec said 0.8–1.6). English-audio videos with Spanish
-  subtitles are dubbed from that track, no translation. Online ("Google") voices only if chosen (privacy).
+Presets → audio + caption layers (`core/playback.ts`); source → L2 translation jobs, cached
+(`llm/translationJob.ts`); speechSynthesis engine: fit rate 1.0–1.6× (speed up only), hold on overrun,
+duck to 15%, resync on seek/pause/ads. English-audio videos with L2 subs dub from that track.
+Online ("Google") voices only if chosen. Headless e2e 13/13; engine unit-tested with fakes.
 
 **Known issues**: headless Chrome has no voices (speech only unit-tested); one voice for all speakers.
 
