@@ -65,6 +65,12 @@ async function handleLex(req: LexRequest): Promise<LexResponse> {
 }
 
 export default defineBackground(() => {
+  // First install: open the setup guide.
+  browser.runtime.onInstalled.addListener(({ reason }) => {
+    if (reason === 'install')
+      void browser.tabs.create({ url: browser.runtime.getURL('/welcome.html') });
+  });
+
   browser.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
     const req = msg as LexRequest | undefined;
     if (req?.target !== 'background') return false;

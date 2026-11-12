@@ -84,6 +84,15 @@ function Popup() {
         )}
       </p>
       {message && <p style={{ margin: '0 0 10px' }}>{message}</p>}
+      {settings && !settings.setupDone && (
+        <p style={{ margin: '0 0 10px' }}>
+          <button
+            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/welcome.html') })}
+          >
+            Finish setup
+          </button>
+        </p>
+      )}
       <button onClick={() => browser.runtime.openOptionsPage()}>Settings</button>{' '}
       <button onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/review.html') })}>
         Review

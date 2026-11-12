@@ -11,10 +11,10 @@ import {
   type Settings,
 } from '@/src/core/settings';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
-import { AIPanel } from './AIPanel';
-import { DubPanel } from './DubPanel';
-import { PlacementTest } from './PlacementTest';
-import './style.css';
+import { AIPanel } from '@/src/ui/settings/AIPanel';
+import { DubPanel } from '@/src/ui/settings/DubPanel';
+import { PlacementTest } from '@/src/ui/settings/PlacementTest';
+import '@/src/ui/settings/page.css';
 
 const PROVIDER_LABELS: Record<LLMProviderId, string> = {
   'chrome-ai': 'Chrome built-in AI',
@@ -80,6 +80,9 @@ function Options() {
   return (
     <main>
       <h1>SLang settings</h1>
+      <p class="muted">
+        New here? <a href="/welcome.html">Open the setup guide</a>.
+      </p>
 
       <section>
         <label for="targetLang">Language I'm learning</label>

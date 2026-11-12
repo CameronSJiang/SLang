@@ -11,10 +11,16 @@ Everything stays on your device. The only network calls go to the AI provider yo
 
 See `SPEC.md` for the full spec and `PROGRESS.md` for status.
 
+## Try it
+
+Testers: see [docs/INSTALL.md](docs/INSTALL.md) — download the zip, load it in `chrome://extensions`, and
+follow the welcome guide.
+
 ## Run it
 
 ```bash
 pnpm install
 pnpm dev        # then load .output/chrome-mv3-dev via chrome://extensions → Load unpacked
 pnpm check      # lint + tests
+pnpm zip        # build .output/slang-<version>-chrome.zip to share
 ```

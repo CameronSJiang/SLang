@@ -42,7 +42,7 @@ async function runTest(p: LLMProvider, s: Settings): Promise<string> {
   return `OK in ${secs}s. ${words || 'no word meanings'}${common ? ` (${common} common words skipped)` : ''}${cue?.l1 ? ` → “${cue.l1}”` : ''}`;
 }
 
-export function AIPanel({ s }: { s: Settings }) {
+export function AIPanel({ s, showAnthropic = true }: { s: Settings; showAnthropic?: boolean }) {
   const [chrome, setChrome] = useState<ChromeAIStatus | null>(null);
   const [download, setDownload] = useState('');
   const [chromeResult, setChromeResult] = useState('');
@@ -109,15 +109,19 @@ export function AIPanel({ s }: { s: Settings }) {
       {download && <p class="muted">{download}</p>}
       {chromeResult && <p class="muted">{chromeResult}</p>}
 
-      <div class="row">
-        <button
-          disabled={!s.anthropicApiKey}
-          onClick={() => void test(new AnthropicProvider(s.anthropicApiKey), setKeyResult)}
-        >
-          Test Anthropic key
-        </button>
-      </div>
-      {keyResult && <p class="muted">{keyResult}</p>}
+      {showAnthropic && (
+        <>
+          <div class="row">
+            <button
+              disabled={!s.anthropicApiKey}
+              onClick={() => void test(new AnthropicProvider(s.anthropicApiKey), setKeyResult)}
+            >
+              Test Anthropic key
+            </button>
+          </div>
+          {keyResult && <p class="muted">{keyResult}</p>}
+        </>
+      )}
     </>
   );
 }

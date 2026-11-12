@@ -41,6 +41,8 @@ export interface Settings {
   playbackPreset: PlaybackPreset;
   /** speechSynthesis voiceURI for dubbing; null = best on-device voice. */
   dubVoice: string | null;
+  /** The first-run welcome guide was finished. */
+  setupDone: boolean;
 }
 
 export const CAPTION_FONT_RANGE = [14, 56] as const;
@@ -60,6 +62,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   captionPosition: 10,
   playbackPreset: 'auto',
   dubVoice: null,
+  setupDone: false,
 });
 
 function isOneOf<T extends string>(list: readonly T[], v: unknown): v is T {
@@ -107,6 +110,7 @@ export function normalizeSettings(raw: unknown): Settings {
       ? r.playbackPreset
       : d.playbackPreset,
     dubVoice: typeof r.dubVoice === 'string' && r.dubVoice ? r.dubVoice : null,
+    setupDone: r.setupDone === true,
   };
 }
 

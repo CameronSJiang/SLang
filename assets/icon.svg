@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C4DFF"/>
+      <stop offset="1" stop-color="#FF6E40"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
+  <!-- speech bubble -->
+  <path d="M30 30h68a12 12 0 0 1 12 12v38a12 12 0 0 1-12 12H62l-18 16v-16H30a12 12 0 0 1-12-12V42a12 12 0 0 1 12-12z" fill="#fff"/>
+  <text x="64" y="80" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="50" fill="#4A2BB8">S</text>
+  <!-- little tilde for the "language" feel -->
+  <path d="M80 44c4-4 8 4 12 0" stroke="#FF6E40" stroke-width="5" fill="none" stroke-linecap="round"/>
+</svg>

@@ -22,6 +22,7 @@ describe('normalizeSettings', () => {
       captionPosition: 40,
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
+      setupDone: true,
     });
     expect(s).toEqual({
       targetLang: 'ko',
@@ -37,6 +38,7 @@ describe('normalizeSettings', () => {
       captionPosition: 40,
       playbackPreset: 'bilingual',
       dubVoice: 'Paulina',
+      setupDone: true,
     });
   });
 
