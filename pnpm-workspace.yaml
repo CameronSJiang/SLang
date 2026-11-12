@@ -1,6 +1,14 @@
 # These dependencies of @huggingface/transformers only matter when it runs under Node (native
 # ONNX runtime, image resizing). SLang runs it in the browser, so their install scripts are skipped
 # on purpose.
+
+# pnpm 11+
+allowBuilds:
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: false
+
+# pnpm 10
 ignoredBuiltDependencies:
   - onnxruntime-node
   - protobufjs
