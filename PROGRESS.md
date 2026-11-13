@@ -16,6 +16,7 @@ overrun, duck to 15%, resync on seek/pause/ads). English-audio videos with L2 su
 Welcome guide (opens on install), icon, saved-words page, `pnpm zip` + `docs/INSTALL.md`. Design kit
 (`src/ui/settings/page.css`, `kit.tsx`), friendly level picker, 6 caption themes (CSS variables), gloss
 labels instead of `<ruby>` (it stretched words). Chrome injects 75% Inter into extension pages: overridden.
+Master on/off (`enabled`, migrated from `overlayEnabled`): popup/options power button, Alt+Shift+S, OFF badge.
 
 ## Natural voice (Kokoro) ✅
 

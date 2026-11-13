@@ -134,7 +134,7 @@ export default defineContentScript({
 
     const draw = () => {
       const player = youtubePlayer();
-      const on = settings.overlayEnabled && !!state.videoId;
+      const on = settings.enabled && !!state.videoId;
       setNativeCaptionsHidden(on);
       if (!on || !player) {
         ui?.unmount();
@@ -207,7 +207,7 @@ export default defineContentScript({
     const syncAnnotation = () => {
       const { translate } = plan();
       const t = targetCues(!!translate);
-      const want = settings.overlayEnabled && state.videoId ? t.annotate : null;
+      const want = settings.enabled && state.videoId ? t.annotate : null;
       if (want === annotating) return;
       stopAnnotation();
       if (!want || !state.videoId || !extensionAlive()) return;
@@ -246,7 +246,7 @@ export default defineContentScript({
     const syncDub = () => {
       const { translate } = plan();
       const key =
-        translate && state.videoId && settings.overlayEnabled
+        translate && state.videoId && settings.enabled
           ? `${state.videoId}|${translate.lang}>${settings.targetLang}|${translate.cues.length}`
           : null;
       if (key === (dub?.key ?? null)) return;
@@ -290,7 +290,7 @@ export default defineContentScript({
       const v = video();
       const cues = targetCues(!!translate).cues;
       const want =
-        settings.overlayEnabled &&
+        settings.enabled &&
         pb.audio === 'dub' &&
         (!!translate || !state.live) &&
         !!v &&
@@ -340,7 +340,7 @@ export default defineContentScript({
     }
 
     const adapter = startYouTubeAdapter(
-      { targetLang: settings.targetLang, enabled: settings.overlayEnabled },
+      { targetLang: settings.targetLang, enabled: settings.enabled },
       (s) => {
         const newVideo = s.videoId !== state.videoId;
         state = s;
@@ -355,7 +355,7 @@ export default defineContentScript({
       const restart = aiSettingsKey(s) !== aiSettingsKey(settings);
       if (priorKey(s) !== priorKey(settings)) lex?.reset();
       settings = s;
-      adapter.setTarget(s.targetLang, s.overlayEnabled);
+      adapter.setTarget(s.targetLang, s.enabled);
       if (restart) {
         stopAnnotation();
         stopDub();

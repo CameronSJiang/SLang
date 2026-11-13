@@ -51,3 +51,13 @@ main.popup {
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
+.popup-head .grow {
+  flex: 1;
+}
+.off-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 13px;
+}

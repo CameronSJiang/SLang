@@ -37,8 +37,8 @@ export interface Settings {
   level: Level;
   /** Vocabulary size from the placement test; overrides the level's default when set. */
   vocabSize: number | null;
-  /** Show our caption overlay on supported players. */
-  overlayEnabled: boolean;
+  /** Master switch: off = SLang leaves every video alone (no captions, dub, or AI work). */
+  enabled: boolean;
   /** Caption font size in px. */
   captionFontSize: number;
   captionTheme: CaptionTheme;
@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   glossDensity: 'auto',
   level: 'A2',
   vocabSize: null,
-  overlayEnabled: true,
+  enabled: true,
   captionFontSize: 26,
   captionTheme: 'slang',
   captionPosition: 10,
@@ -117,7 +117,13 @@ export function normalizeSettings(raw: unknown): Settings {
       typeof r.vocabSize === 'number' && Number.isFinite(r.vocabSize) && r.vocabSize > 0
         ? Math.round(Math.min(r.vocabSize, 50000))
         : null,
-    overlayEnabled: typeof r.overlayEnabled === 'boolean' ? r.overlayEnabled : d.overlayEnabled,
+    enabled:
+      typeof r.enabled === 'boolean'
+        ? r.enabled
+        : // Before the master switch, this was the caption-overlay toggle.
+          typeof r.overlayEnabled === 'boolean'
+          ? r.overlayEnabled
+          : d.enabled,
     captionFontSize: Math.round(clampNum(r.captionFontSize, CAPTION_FONT_RANGE, d.captionFontSize)),
     captionTheme: isOneOf(CAPTION_THEMES, r.captionTheme)
       ? r.captionTheme

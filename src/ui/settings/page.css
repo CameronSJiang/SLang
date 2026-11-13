@@ -272,6 +272,24 @@ input[type='range'] {
   transform: translateX(18px);
 }
 
+/* Master power switch */
+button.power {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  flex: none;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+  border-color: transparent;
+}
+button.power[aria-checked='true'] {
+  color: #fff;
+  background: var(--grad);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
 /* Segmented control */
 .seg {
   display: inline-flex;
@@ -460,4 +478,21 @@ input[type='range'] {
   height: 100%;
   background: var(--grad);
   transition: width 0.2s ease;
+}
+
+/* Master switch off */
+.off-banner {
+  display: block;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  margin: 0 0 16px;
+}
+kbd {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
 }

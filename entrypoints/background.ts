@@ -1,6 +1,6 @@
 import { browser } from 'wxt/browser';
 import { transcriptKey } from '@/src/storage/db';
-import { loadSettings } from '@/src/storage/settings';
+import { loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
 import { dexieTranscriptCache } from '@/src/storage/transcripts';
 import { applyLexEvents, getWordInfo, saveCard } from '@/src/storage/lexicon';
 import type { LexRequest, LexResponse } from '@/src/storage/lexMessages';
@@ -65,7 +65,21 @@ async function handleLex(req: LexRequest): Promise<LexResponse> {
   }
 }
 
+/** Toolbar badge: "OFF" while the master switch is off. */
+function showOnOff(s: Settings) {
+  void browser.action.setBadgeText({ text: s.enabled ? '' : 'OFF' });
+}
+
 export default defineBackground(() => {
+  void browser.action.setBadgeBackgroundColor({ color: '#6b6480' });
+  void loadSettings().then(showOnOff);
+  watchSettings(showOnOff);
+  // Keyboard shortcut (Alt+Shift+S by default; changeable at chrome://extensions/shortcuts).
+  browser.commands.onCommand.addListener((command) => {
+    if (command === 'toggle-slang')
+      void loadSettings().then((s) => saveSettings({ enabled: !s.enabled }));
+  });
+
   // First install: open the setup guide.
   browser.runtime.onInstalled.addListener(({ reason }) => {
     if (reason === 'install')

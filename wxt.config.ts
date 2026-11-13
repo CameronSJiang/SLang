@@ -29,6 +29,12 @@ export default defineConfig({
     // Cross-origin isolation lets the voice model use several CPU threads.
     cross_origin_embedder_policy: { value: 'require-corp' },
     cross_origin_opener_policy: { value: 'same-origin' },
+    commands: {
+      'toggle-slang': {
+        suggested_key: { default: 'Alt+Shift+S' },
+        description: 'Turn SLang on or off',
+      },
+    },
   },
   vite: () => ({
     plugins: [

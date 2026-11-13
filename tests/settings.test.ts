@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, normalizeSettings, redactSettings } from '../src/core/settings';
 
 describe('normalizeSettings', () => {
+  it('migrates the old caption toggle into the master switch', () => {
+    expect(normalizeSettings({ overlayEnabled: false }).enabled).toBe(false);
+    expect(normalizeSettings({ overlayEnabled: false, enabled: true }).enabled).toBe(true);
+  });
+
   it('returns defaults for missing data', () => {
     expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
     expect(normalizeSettings('garbage')).toEqual(DEFAULT_SETTINGS);
@@ -16,7 +21,7 @@ describe('normalizeSettings', () => {
       glossDensity: 'high',
       level: 'C1',
       vocabSize: 2400,
-      overlayEnabled: false,
+      enabled: false,
       captionFontSize: 30,
       captionTheme: 'paper',
       captionPosition: 40,
@@ -35,7 +40,7 @@ describe('normalizeSettings', () => {
       glossDensity: 'high',
       level: 'C1',
       vocabSize: 2400,
-      overlayEnabled: false,
+      enabled: false,
       captionFontSize: 30,
       captionTheme: 'paper',
       captionPosition: 40,

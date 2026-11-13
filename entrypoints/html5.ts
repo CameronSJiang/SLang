@@ -28,7 +28,9 @@ export default defineUnlistedScript(async () => {
   document.addEventListener('fullscreenchange', place);
   place();
 
-  const draw = () =>
+  const draw = () => {
+    // Master switch off: leave the page's video alone.
+    ui.host.style.display = settings.enabled ? '' : 'none';
     ui.render({
       state,
       video,
@@ -38,6 +40,7 @@ export default defineUnlistedScript(async () => {
         if (extensionAlive()) saveSettings({ captionPosition }).catch(() => {});
       },
     });
+  };
 
   const adapter = startHtml5Adapter(video, settings.targetLang, (s) => {
     state = s;

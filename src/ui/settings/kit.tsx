@@ -43,6 +43,33 @@ export function Toggle(props: {
   );
 }
 
+/** Chrome shows Alt as Option on a Mac. */
+export const ALT_KEY = /Mac/i.test(globalThis.navigator?.platform ?? '') ? 'Option' : 'Alt';
+
+/** The master on/off switch. */
+export function PowerButton(props: { on: boolean; onChange(on: boolean): void }) {
+  return (
+    <button
+      class="power"
+      role="switch"
+      aria-checked={props.on}
+      aria-label="SLang on/off"
+      title={`Turn SLang ${props.on ? 'off' : 'on'} (${ALT_KEY}+Shift+S)`}
+      onClick={() => props.onChange(!props.on)}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path
+          d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+  );
+}
+
 export function Segmented<T extends string>(props: {
   value: T;
   options: readonly { value: T; label: string; title?: string }[];

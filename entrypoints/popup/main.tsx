@@ -4,7 +4,7 @@ import { browser } from 'wxt/browser';
 import { PLAYBACK_PRESETS } from '@/src/core/playback';
 import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { PRESET_INFO } from '@/src/ui/presets';
-import { Toggle } from '@/src/ui/settings/kit';
+import { PowerButton } from '@/src/ui/settings/kit';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 import '@/src/ui/settings/page.css';
 import './popup.css';
@@ -56,12 +56,15 @@ function Popup() {
     <main class="popup">
       <header class="popup-head">
         <img src="/icon/48.png" width="34" height="34" alt="" />
-        <div>
+        <div class="grow">
           <b>SLang</b>
           <span class="muted">
-            Learning {LANGUAGES[s.targetLang]} · level {s.level}
+            {s.enabled
+              ? `Learning ${LANGUAGES[s.targetLang]} · level ${s.level}`
+              : 'Off · videos play normally'}
           </span>
         </div>
+        <PowerButton on={s.enabled} onChange={(enabled) => update({ enabled })} />
       </header>
 
       {!s.setupDone && (
@@ -70,35 +73,41 @@ function Popup() {
         </button>
       )}
 
-      <Toggle checked={s.overlayEnabled} onChange={(v) => update({ overlayEnabled: v })}>
-        Captions on videos
-      </Toggle>
-
-      <div class="stack" style={{ gap: '6px' }}>
-        <span class="field-label">Mode</span>
-        <div class="modes" role="radiogroup" aria-label="Mode">
-          {PLAYBACK_PRESETS.map((p) => (
-            <button
-              key={p}
-              role="radio"
-              aria-checked={s.playbackPreset === p}
-              aria-pressed={s.playbackPreset === p}
-              title={PRESET_INFO[p].desc}
-              onClick={() => update({ playbackPreset: p })}
-            >
-              <span aria-hidden="true">{PRESET_INFO[p].emoji}</span> {PRESET_INFO[p].label}
-            </button>
-          ))}
-        </div>
-        <p class="muted mode-desc">{PRESET_INFO[s.playbackPreset].desc}</p>
-      </div>
-
-      {isYouTube(tabUrl) ? (
-        <p class="muted">▶ Running on YouTube automatically.</p>
-      ) : (
-        <button onClick={() => void showOnPage()}>Show captions on this page</button>
+      {!s.enabled && (
+        <p class="off-note">
+          SLang is taking a nap 😴 No captions, no dubbing, no AI. Hit the power button to wake it
+          up.
+        </p>
       )}
-      {message && <p class="muted">{message}</p>}
+
+      {s.enabled && (
+        <div class="stack" style={{ gap: '6px' }}>
+          <span class="field-label">Mode</span>
+          <div class="modes" role="radiogroup" aria-label="Mode">
+            {PLAYBACK_PRESETS.map((p) => (
+              <button
+                key={p}
+                role="radio"
+                aria-checked={s.playbackPreset === p}
+                aria-pressed={s.playbackPreset === p}
+                title={PRESET_INFO[p].desc}
+                onClick={() => update({ playbackPreset: p })}
+              >
+                <span aria-hidden="true">{PRESET_INFO[p].emoji}</span> {PRESET_INFO[p].label}
+              </button>
+            ))}
+          </div>
+          <p class="muted mode-desc">{PRESET_INFO[s.playbackPreset].desc}</p>
+        </div>
+      )}
+
+      {s.enabled &&
+        (isYouTube(tabUrl) ? (
+          <p class="muted">▶ Running on YouTube automatically.</p>
+        ) : (
+          <button onClick={() => void showOnPage()}>Show captions on this page</button>
+        ))}
+      {s.enabled && message && <p class="muted">{message}</p>}
 
       <footer class="popup-foot">
         <button class="btn-ghost" onClick={() => openPage('/review.html')}>

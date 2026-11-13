@@ -13,7 +13,15 @@ import {
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 import { AIPanel } from '@/src/ui/settings/AIPanel';
 import { DubPanel } from '@/src/ui/settings/DubPanel';
-import { Card, LevelPicker, Segmented, ThemePicker, Toggle } from '@/src/ui/settings/kit';
+import {
+  ALT_KEY,
+  Card,
+  LevelPicker,
+  PowerButton,
+  Segmented,
+  ThemePicker,
+  Toggle,
+} from '@/src/ui/settings/kit';
 import { PlacementTest } from '@/src/ui/settings/PlacementTest';
 import '@/src/ui/settings/page.css';
 
@@ -90,7 +98,7 @@ function Options() {
     <main>
       <header class="page-head">
         <img src="/icon/128.png" width="64" height="64" alt="" />
-        <div>
+        <div style={{ flex: 1 }}>
           <h1>
             <span class="grad-text">SLang</span> settings
           </h1>
@@ -99,7 +107,17 @@ function Options() {
             <a href="/welcome.html">Run the setup guide</a>.
           </p>
         </div>
+        <PowerButton on={s.enabled} onChange={(enabled) => void update({ enabled })} />
       </header>
+      {!s.enabled && (
+        <p class="card off-banner">
+          <span>
+            <b>SLang is off.</b> Videos play normally: no captions, no dubbing, no AI. Flip the
+            power button (or press <kbd>{ALT_KEY}</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) to bring it
+            back.
+          </span>
+        </p>
+      )}
 
       <Card emoji="🌍" title="Languages">
         <div class="row">
@@ -130,9 +148,6 @@ function Options() {
       </Card>
 
       <Card emoji="💬" title="Captions" subtitle="How the words on the video look and behave.">
-        <Toggle checked={s.overlayEnabled} onChange={(v) => void update({ overlayEnabled: v })}>
-          Show SLang captions on videos
-        </Toggle>
         <span class="field-label">Theme</span>
         <ThemePicker value={s.captionTheme} onChange={(t) => void update({ captionTheme: t })} />
         <div class="sub">
