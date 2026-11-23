@@ -71,8 +71,12 @@ export function WordPopover({ token, info, lang, x, bottom, onAction, onClose }:
         {token.gloss || <span class="muted">No meaning yet — still translating.</span>}
       </div>
       <div class="pop-actions">
-        <button disabled={saved} onClick={() => onAction('save')}>
-          {saved ? 'Saved' : 'Save'}
+        <button
+          class={saved ? 'saved' : undefined}
+          disabled={saved}
+          onClick={() => onAction('save')}
+        >
+          {saved ? 'Saved ✓' : 'Save'}
         </button>
         <button onClick={() => onAction('known')}>Known</button>
         <button onClick={() => onAction('ignore')}>Ignore</button>

@@ -146,6 +146,12 @@ export const overlayCss = `
 }
 .pop-actions button:hover { background: #444; }
 .pop-actions button:disabled { opacity: 0.5; cursor: default; }
+.pop-actions button.saved {
+  opacity: 1;
+  background: rgba(124, 77, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.75);
+  color: #efeaff;
+}
 .notice {
   position: absolute;
   top: 12px;
