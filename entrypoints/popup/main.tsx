@@ -6,6 +6,7 @@ import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { PRESET_INFO } from '@/src/ui/presets';
 import { PowerButton } from '@/src/ui/settings/kit';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
+import { WAITLIST_URL } from '@/src/ui/links';
 import '@/src/ui/settings/page.css';
 import './popup.css';
 
@@ -109,9 +110,15 @@ function Popup() {
         ))}
       {s.enabled && message && <p class="muted">{message}</p>}
 
+      {WAITLIST_URL && (
+        <a class="muted waitlist" href={WAITLIST_URL} target="_blank" rel="noreferrer">
+          ✨ SLang Pro is coming. Join the waitlist
+        </a>
+      )}
+
       <footer class="popup-foot">
         <button class="btn-ghost" onClick={() => openPage('/review.html')}>
-          ⭐ Saved words
+          🐉 Quiz & saved words
         </button>
         <button class="btn-ghost" onClick={() => void browser.runtime.openOptionsPage()}>
           ⚙️ Settings

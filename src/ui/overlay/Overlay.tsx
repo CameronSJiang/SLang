@@ -6,6 +6,8 @@ import { selectGlosses, type WordInfo } from '../../core/glossPolicy';
 import type { CaptionMode } from '../../core/playback';
 import { CAPTION_POSITION_RANGE, LANGUAGES, type Settings } from '../../core/settings';
 import type { AnnotatedCue, Cue, Token } from '../../core/types';
+import { Draco, type DracoMood } from '../buddy/Draco';
+import { sayWord, type SayHandle } from '../buddy/voice';
 import { Caption } from './Caption';
 import { THEMES } from './themes';
 import { WordPopover, type WordAction } from './WordPopover';
@@ -14,6 +16,13 @@ import { WordPopover, type WordAction } from './WordPopover';
 const EXPOSURE_MIN_S = 1.5;
 /** Pointer movement (px) that turns a press into a drag instead of a word click. */
 const DRAG_SLOP = 4;
+/** Draco stays up this long after he finishes saying a word. */
+const BUDDY_LINGER_MS = 2200;
+
+export interface PronounceEvents {
+  onStart?(): void;
+  onEnd?(): void;
+}
 
 export interface OverlayProps {
   state: CaptionState;
@@ -26,6 +35,7 @@ export interface OverlayProps {
     | 'captionTheme'
     | 'captionPosition'
     | 'glossDensity'
+    | 'buddyEnabled'
   >;
   /** Called once when a drag ends, with the new position (% from bottom). */
   onMove(position: number): void;
@@ -43,6 +53,15 @@ export interface OverlayProps {
   sourceFor?: (cue: Cue) => string | undefined;
   /** Extra status messages (e.g. dub mode), shown with the AI status. */
   messages?: readonly string[];
+  /** Say a word aloud (🔊). Defaults to the browser's voice. */
+  pronounce?(text: string, lang: string, on: PronounceEvents): SayHandle;
+}
+
+interface Buddy {
+  word: string;
+  gloss: string;
+  mood: DracoMood;
+  key: number;
 }
 
 interface Popover {
@@ -114,6 +133,7 @@ export function Overlay({
   captions = 'l2',
   sourceFor,
   messages = [],
+  pronounce = (text, lang, on) => sayWord(text, { lang, ...on }),
 }: OverlayProps) {
   const index = useActiveCue(video, state.cues);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -132,6 +152,16 @@ export function Overlay({
   /** The cue under the pointer while a press/drag is in progress: keep it on screen until release. */
   const [held, setHeld] = useState<Cue | null>(null);
   const shown = useRef<{ id: string; enter: number; lookedUp: boolean } | null>(null);
+  const [buddy, setBuddy] = useState<Buddy | null>(null);
+  const saying = useRef<SayHandle | null>(null);
+  const buddyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(
+    () => () => {
+      clearTimeout(buddyTimer.current);
+      saying.current?.stop();
+    },
+    [],
+  );
 
   // Exposure: when the active cue changes, credit the previous one if it was watched long enough.
   const cueId = index >= 0 ? state.cues[index]?.id : undefined;
@@ -197,6 +227,24 @@ export function Overlay({
       resume,
     });
     onWord?.('lookup', ann, token);
+  };
+
+  /** 🔊: say the word; Draco pops up and says it too (unless he's switched off). */
+  const sayToken = (token: Token) => {
+    saying.current?.stop();
+    clearTimeout(buddyTimer.current);
+    const withBuddy = settings.buddyEnabled;
+    const setMood = (mood: DracoMood) => setBuddy((b) => b && { ...b, mood });
+    if (withBuddy)
+      setBuddy({ word: token.surface, gloss: token.gloss, mood: 'idle', key: Date.now() });
+    saying.current = pronounce(token.surface, state.lang ?? settings.targetLang, {
+      onStart: () => withBuddy && setMood('talk'),
+      onEnd: () => {
+        if (!withBuddy) return;
+        setMood('idle');
+        buddyTimer.current = setTimeout(() => setBuddy(null), BUDDY_LINGER_MS);
+      },
+    });
   };
 
   const onPointerDown = (e: PointerEvent) => {
@@ -302,11 +350,32 @@ export function Overlay({
           x={pop.x}
           bottom={pop.bottom}
           onClose={closePop}
+          onSpeak={() => sayToken(openCue.tokens[pop.token] as Token)}
           onAction={(a) => {
             onWord?.(a, openCue, openCue.tokens[pop.token] as Token);
             if (a !== 'save') closePop();
           }}
         />
+      )}
+      {buddy && (
+        <div
+          key={buddy.key}
+          class="buddy"
+          title="Draco (click to dismiss)"
+          onClick={(e) => {
+            stop(e);
+            setBuddy(null);
+          }}
+          onPointerDown={stop}
+          onMouseDown={stop}
+          onDblClick={stop}
+        >
+          <div class="bubble" lang={state.lang ?? settings.targetLang}>
+            <b>{buddy.word}</b>
+            {buddy.gloss && <span lang={settings.nativeLang}>{buddy.gloss}</span>}
+          </div>
+          <Draco mood={buddy.mood} size="100%" />
+        </div>
       )}
     </div>
   );

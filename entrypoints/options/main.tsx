@@ -11,6 +11,9 @@ import {
   type Settings,
 } from '@/src/core/settings';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
+import { Draco, DracoStyle, type DracoMood } from '@/src/ui/buddy/Draco';
+import { sayWord } from '@/src/ui/buddy/voice';
+import { WAITLIST_URL } from '@/src/ui/links';
 import { AIPanel } from '@/src/ui/settings/AIPanel';
 import { DubPanel } from '@/src/ui/settings/DubPanel';
 import {
@@ -41,10 +44,19 @@ const DENSITY: Record<GlossDensity, { label: string; title: string }> = {
   high: { label: 'More', title: 'Up to 3 hints per line, including words you half-know' },
 };
 
+const HELLO_WORD: Record<string, string> = {
+  es: '¡Hola!',
+  fr: 'Salut !',
+  ja: 'こんにちは',
+  ko: '안녕하세요',
+  en: 'Hello!',
+};
+
 function Options() {
   const [s, setS] = useState<Settings | null>(null);
   const [toast, setToast] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [dracoMood, setDracoMood] = useState<DracoMood>('idle');
 
   useEffect(() => {
     void loadSettings().then(setS);
@@ -96,6 +108,7 @@ function Options() {
 
   return (
     <main>
+      <DracoStyle />
       <header class="page-head">
         <img src="/icon/128.png" width="64" height="64" alt="" />
         <div style={{ flex: 1 }}>
@@ -105,6 +118,15 @@ function Options() {
           <p class="muted">
             Tweak away — everything saves as you go. New here?{' '}
             <a href="/welcome.html">Run the setup guide</a>.
+            {WAITLIST_URL && (
+              <>
+                {' '}
+                Want Pro?{' '}
+                <a href={WAITLIST_URL} target="_blank" rel="noreferrer">
+                  Join the waitlist ✨
+                </a>
+              </>
+            )}
           </p>
         </div>
         <PowerButton on={s.enabled} onChange={(enabled) => void update({ enabled })} />
@@ -184,6 +206,42 @@ function Options() {
             onChange={(e) => void update({ captionPosition: Number(e.currentTarget.value) })}
           />
           <p class="muted">Or just drag the captions up and down on the video.</p>
+        </div>
+      </Card>
+
+      <Card
+        emoji="🐉"
+        title="Draco, your study buddy"
+        subtitle="Pops up to say words when you tap 🔊, and quizzes you on words you probably know."
+      >
+        <div class="row" style={{ alignItems: 'center', gap: '16px' }}>
+          <Draco mood={s.buddyEnabled ? dracoMood : 'idle'} size={84} bob={s.buddyEnabled} />
+          <div class="stack" style={{ flex: 1 }}>
+            <Toggle checked={s.buddyEnabled} onChange={(v) => void update({ buddyEnabled: v })}>
+              Draco pops up on videos and runs quizzes
+            </Toggle>
+            <div class="row">
+              <button
+                disabled={!s.buddyEnabled}
+                onClick={() =>
+                  sayWord(HELLO_WORD[s.targetLang] ?? '¡Hola!', {
+                    lang: s.targetLang,
+                    natural:
+                      s.dubEngine === 'natural'
+                        ? { voice: s.kokoroVoice, speed: s.kokoroSpeed }
+                        : null,
+                    onStart: () => setDracoMood('talk'),
+                    onEnd: () => setDracoMood('idle'),
+                  })
+                }
+              >
+                🔊 Say hi
+              </button>
+              <a class="btn btn-ghost" href="/review.html">
+                🐉 Quiz me
+              </a>
+            </div>
+          </div>
         </div>
       </Card>
 

@@ -26,4 +26,11 @@ our rules (`core/g2p/es.ts`; Whisper transcribed the output correctly). DubEngin
 ORT wasm bundled in `/ort/` (no remote code); extension pages cross-origin isolated → 4 threads.
 Known: ~0.6× real time on a 4-core cloud CPU (expect ~real time on a recent Mac). Spanish only.
 
-**Next:** M4 — review page with clip context.
+## Draco + waitlist ✅
+
+Draco (SVG/CSS dragon, `ui/buddy/`): pops up over the video on 🔊 and says the word (Kokoro if loaded, else
+system voice), mouth moves while speaking; `buddyEnabled` toggle. Review page quiz (`core/quiz.ts`, pool from
+cached transcripts + cards): 4-choice meanings, right → `quiz-right` (+60% of gap), wrong → saved + FSRS Again.
+`site/`: static waitlist page (Google Form link in `FORM_URL`); `WAITLIST_URL` shows links once hosted.
+
+**Next:** M4 rest — due badge (`chrome.alarms`), Again/Hard/Good/Easy card reviews.

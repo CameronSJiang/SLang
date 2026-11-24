@@ -53,7 +53,11 @@ export function newEntry(lemma: string, lang: string, pKnown: number, now: numbe
   };
 }
 
-export type LexEvent = 'lookup' | 'exposure' | 'known' | 'ignore' | 'save' | 'reset';
+export type LexEvent =
+  'lookup' | 'exposure' | 'known' | 'ignore' | 'save' | 'reset' | 'quiz-right' | 'quiz-wrong';
+
+/** A right quiz answer closes this much of the gap to "known" (multiple choice can be guessed). */
+export const QUIZ_RIGHT_GAIN = 0.6;
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -84,6 +88,14 @@ export function applyEvent(e: LexEntry, ev: LexEvent, now: number, prior?: numbe
       next.custom = true;
       next.state = 'learning';
       next.pKnown = Math.min(e.pKnown, 0.3);
+      break;
+    case 'quiz-right':
+      next.pKnown = clamp01(e.pKnown + QUIZ_RIGHT_GAIN * (1 - e.pKnown));
+      if (e.state === 'new') next.state = 'seen';
+      break;
+    case 'quiz-wrong':
+      next.pKnown = clamp01(e.pKnown * LOOKUP_FACTOR);
+      next.state = e.state === 'known' ? 'learning' : learning(e.state);
       break;
     case 'reset':
       next.state = 'new';
