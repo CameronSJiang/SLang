@@ -20,13 +20,25 @@ function createSlangForm() {
   form.setCollectEmail(false); // no automatic email collection; the email question is optional
   form.setAllowResponseEdits(false);
   form.setShowLinkToRespondAgain(false);
-  form.setConfirmationMessage('Thank you! 🐉 Draco appreciates you. We’ll be in touch if you left an email.');
+  form.setConfirmationMessage(
+    'Thank you! 🐉 Draco appreciates you. We’ll be in touch if you left an email.',
+  );
 
   // About you
   form
     .addCheckboxItem()
     .setTitle('Which language(s) are you learning, or want to learn?')
-    .setChoiceValues(['Spanish', 'French', 'Japanese', 'Korean', 'German', 'Italian', 'Portuguese', 'Mandarin', 'English'])
+    .setChoiceValues([
+      'Spanish',
+      'French',
+      'Japanese',
+      'Korean',
+      'German',
+      'Italian',
+      'Portuguese',
+      'Mandarin',
+      'English',
+    ])
     .showOtherOption(true)
     .setRequired(true);
   form
@@ -42,7 +54,16 @@ function createSlangForm() {
   form
     .addCheckboxItem()
     .setTitle('Which language(s) do you speak fluently?')
-    .setChoiceValues(['English', 'Spanish', 'French', 'Mandarin', 'Hindi', 'Korean', 'Japanese', 'Portuguese'])
+    .setChoiceValues([
+      'English',
+      'Spanish',
+      'French',
+      'Mandarin',
+      'Hindi',
+      'Korean',
+      'Japanese',
+      'Portuguese',
+    ])
     .showOtherOption(true)
     .setRequired(true);
   form

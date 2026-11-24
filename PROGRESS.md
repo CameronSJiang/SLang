@@ -1,4 +1,5 @@
 # Progress
+
 ## M0–M3 ✅
 
 Scaffold; YouTube caption capture + overlay; LLM annotation (Null / Anthropic `claude-haiku-5-5` / Chrome AI)
@@ -23,8 +24,7 @@ ORT wasm bundled in `/ort/`; pages cross-origin isolated → 4 threads. ~0.6× r
 
 ## Draco + waitlist ✅
 
-Draco (SVG/CSS, `ui/buddy/`) pops up on 🔊 and says the word, mouth moving; `buddyEnabled` toggle.
-Review-page quiz (`core/quiz.ts`, pool = cached transcripts + cards): right → `quiz-right`, wrong → saved
-+ FSRS Again. `site/`: static waitlist page (set `FORM_URL`); `WAITLIST_URL` shows links once hosted.
+Draco (SVG/CSS, `ui/buddy/`) pops up on 🔊 and says the word; review-page quiz (`core/quiz.ts`): right →
+`quiz-right`, wrong → saved + FSRS Again. `site/`: waitlist page (`FORM_URL`) + `create-form.gs` (Apps Script).
 
 **Next:** M4 rest — due badge (`chrome.alarms`), Again/Hard/Good/Easy card reviews.
