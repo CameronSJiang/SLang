@@ -1,5 +1,4 @@
 # Progress
-
 ## M0–M3 ✅
 
 Scaffold; YouTube caption capture + overlay; LLM annotation (Null / Anthropic `claude-haiku-5-5` / Chrome AI)
