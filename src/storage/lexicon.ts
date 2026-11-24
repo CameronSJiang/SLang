@@ -1,4 +1,4 @@
-/** Learner lexicon and saved cards in IndexedDB. Background-only (content scripts message it). */
+/** Learner lexicon and saved cards in IndexedDB. Background and extension pages only (content scripts message the background). */
 import { createEmptyCard } from 'ts-fsrs';
 import type { WordInfo } from '../core/glossPolicy';
 import {

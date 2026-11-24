@@ -1,3 +1,4 @@
+import { sayWord } from '@/src/ui/buddy/voice';
 import { startYouTubeAdapter, youtubePlayer } from '@/src/adapters/youtube';
 import { IDLE_STATE, type CaptionState } from '@/src/adapters/types';
 import { findCueIndex } from '@/src/core/cueIndex';
@@ -189,6 +190,15 @@ export default defineContentScript({
           // An orphaned script (extension reloaded under an open tab) can't save.
           if (extensionAlive()) saveSettings({ captionPosition }).catch(() => {});
         },
+        pronounce: (text, lang, on) =>
+          sayWord(text, {
+            lang,
+            natural:
+              settings.dubEngine === 'natural'
+                ? { voice: settings.kokoroVoice, speed: settings.kokoroSpeed }
+                : null,
+            ...on,
+          }),
       });
     };
 

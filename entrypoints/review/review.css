@@ -1,0 +1,82 @@
+.quiz {
+  gap: 16px;
+}
+.quiz-stage {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.quiz-stage .draco {
+  flex: none;
+}
+.speech {
+  position: relative;
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  font-size: 17px;
+  line-height: 1.4;
+}
+.speech::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  margin-top: -9px;
+  border: 9px solid transparent;
+  border-left: 0;
+  border-right-color: var(--accent-soft);
+}
+.quiz-word {
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+.quiz-context {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+.quiz-context mark {
+  background: none;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: underline 2px var(--accent-2);
+  text-underline-offset: 0.18em;
+}
+.quiz-choices {
+  grid-template-columns: 1fr 1fr;
+}
+.quiz-choices .choice {
+  font-size: 15px;
+}
+.quiz-choices .choice:disabled {
+  opacity: 1;
+}
+.quiz-choices .choice.right {
+  border-color: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent);
+}
+.quiz-choices .choice.right .tag {
+  background: var(--ok);
+  color: #fff;
+}
+.quiz-choices .choice.wrong {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 18%, transparent);
+}
+.quiz-choices .choice.wrong .tag {
+  background: var(--warn);
+  color: #fff;
+}
+@media (max-width: 520px) {
+  .quiz-choices {
+    grid-template-columns: 1fr;
+  }
+  .quiz-stage {
+    flex-direction: column;
+  }
+  .speech::before {
+    display: none;
+  }
+}

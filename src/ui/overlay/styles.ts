@@ -1,5 +1,8 @@
 /** Shadow-DOM styles for the caption overlay (no page CSS leaks in or out). */
-export const overlayCss = `
+import { dracoCss } from '../buddy/Draco';
+
+export const overlayCss =
+  `
 :host { all: initial; }
 .root {
   position: absolute;
@@ -173,4 +176,42 @@ export const overlayCss = `
   line-height: 1;
   padding: 0 2px;
 }
-`;
+/* Draco: pops up from above the player controls, bottom right. */
+.buddy {
+  position: absolute;
+  right: 3%;
+  bottom: 56px;
+  width: clamp(64px, 15cqh, 130px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 3;
+  animation: buddy-in 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.buddy .bubble {
+  position: relative;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: #fff;
+  color: #21173a;
+  font: 700 16px/1.25 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+.buddy .bubble span { display: block; font-weight: 500; font-size: 12px; color: #6b6480; }
+.buddy .bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: #fff;
+}
+@keyframes buddy-in { from { transform: translateY(40%) scale(0.6); opacity: 0; } }
+` + dracoCss;

@@ -1,7 +1,6 @@
 import { useEffect } from 'preact/hooks';
 import type { WordInfo } from '../../core/glossPolicy';
 import type { Token } from '../../core/types';
-import { speak } from '../tts';
 
 const POS_NAMES: Record<string, string> = {
   NOUN: 'noun',
@@ -31,11 +30,22 @@ interface PopoverProps {
   bottom: number;
   onAction(a: Exclude<WordAction, 'lookup'>): void;
   onClose(): void;
+  /** 🔊 pressed. */
+  onSpeak(): void;
 }
 
 const stop = (e: Event) => e.stopPropagation();
 
-export function WordPopover({ token, info, lang, x, bottom, onAction, onClose }: PopoverProps) {
+export function WordPopover({
+  token,
+  info,
+  lang,
+  x,
+  bottom,
+  onAction,
+  onClose,
+  onSpeak,
+}: PopoverProps) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', key, true);
@@ -60,7 +70,7 @@ export function WordPopover({ token, info, lang, x, bottom, onAction, onClose }:
           {token.lemma}
         </span>
         {pos && <span class="pos">{pos}</span>}
-        <button class="icon" aria-label="Pronounce" onClick={() => speak(token.surface, lang)}>
+        <button class="icon" aria-label="Pronounce" onClick={onSpeak}>
           🔊
         </button>
         <button class="icon close" aria-label="Close" onClick={onClose}>

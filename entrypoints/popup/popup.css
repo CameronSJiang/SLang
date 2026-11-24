@@ -61,3 +61,11 @@ main.popup {
   background: var(--accent-soft);
   font-size: 13px;
 }
+.waitlist {
+  text-align: center;
+  font-size: 12.5px;
+  text-decoration: none;
+}
+.waitlist:hover {
+  color: var(--accent);
+}
