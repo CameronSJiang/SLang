@@ -3,705 +3,521 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SLang · Learn Spanish from YouTube</title>
+    <title>SLang: learn a language from YouTube</title>
     <meta
       name="description"
-      content="SLang turns the YouTube videos you already watch into Spanish practice: smart captions, a natural Spanish dub voice, and Draco, a tiny dragon who quizzes you."
+      content="SLang is a free Chrome extension that shows YouTube subtitles in the language you are learning, translates the words you probably don't know, and can dub English videos into Spanish."
     />
-    <meta property="og:title" content="SLang · Learn Spanish from YouTube" />
+    <meta property="og:title" content="SLang: learn a language from YouTube" />
     <meta
       property="og:description"
-      content="Smart captions, a natural Spanish dub voice, and a tiny dragon who quizzes you. Join the Pro waitlist."
+      content="A Chrome extension that turns YouTube subtitles into language practice."
     />
+    <meta property="og:image" content="hero.png" />
     <link rel="icon" href="icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
-        --accent: #7c4dff;
-        --accent-2: #ff6e40;
-        --grad: linear-gradient(135deg, var(--accent), var(--accent-2));
-        --bg: #f7f5fb;
-        --card: #ffffff;
-        --text: #1d1730;
-        --muted: #6b6480;
-        --line: #e6e1f0;
-        --soft: color-mix(in srgb, var(--accent) 12%, transparent);
-        --shadow: 0 1px 2px rgba(29, 23, 48, 0.06), 0 12px 32px rgba(29, 23, 48, 0.08);
+        --bg: #fbfaf8;
+        --text: #1b1b1f;
+        --muted: #5b5b66;
+        --line: #e3e0da;
+        --accent: #4a37c9;
+        --accent-text: #ffffff;
+        --sans: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #14111c;
-          --card: #1e1a29;
-          --text: #f1edfa;
-          --muted: #a39cb8;
-          --line: #2f2940;
-          --soft: color-mix(in srgb, var(--accent) 22%, transparent);
-          --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+          --bg: #131316;
+          --text: #ececf0;
+          --muted: #a2a2ad;
+          --line: #2c2c33;
+          --accent: #9c8cff;
+          --accent-text: #131316;
         }
       }
       * {
         box-sizing: border-box;
       }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--text);
-        font:
-          500 17px/1.55 Nunito,
-          ui-rounded,
-          system-ui,
-          -apple-system,
-          'Segoe UI',
-          sans-serif;
-        -webkit-font-smoothing: antialiased;
+        font: 400 18px/1.6 var(--sans);
       }
       a {
-        color: inherit;
+        color: var(--accent);
+        text-underline-offset: 0.15em;
       }
       .wrap {
-        max-width: 1080px;
+        max-width: 1120px;
         margin: 0 auto;
-        padding: 0 20px;
+        padding: 0 24px;
       }
-      .grad-text {
-        background: var(--grad);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+      h1,
+      h2 {
+        font-family: var(--serif);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
       }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 13px 24px;
-        border-radius: 999px;
-        font-weight: 800;
-        font-size: 17px;
-        text-decoration: none;
-        border: 1px solid var(--line);
-        background: var(--card);
-        transition:
-          transform 0.1s ease,
-          box-shadow 0.2s ease;
+      h1 {
+        font-size: clamp(34px, 4.6vw, 52px);
+        line-height: 1.1;
+        max-width: 15em;
       }
-      .btn:hover {
-        transform: translateY(-1px);
+      h2 {
+        font-size: 28px;
+        line-height: 1.2;
       }
-      .btn-primary {
-        background: var(--grad);
-        color: #fff;
-        border: none;
-        box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 40%, transparent);
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p {
+        margin: 0 0 14px;
       }
 
-      /* Nav */
-      nav {
+      /* Header */
+      header.top {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 18px 0;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--line);
       }
       .brand {
         display: flex;
         align-items: center;
         gap: 10px;
-        font-weight: 900;
-        font-size: 22px;
+        color: var(--text);
         text-decoration: none;
+        font-weight: 600;
+        font-size: 20px;
       }
       .brand img {
-        border-radius: 10px;
+        border-radius: 6px;
       }
-      nav .btn {
-        padding: 9px 18px;
-        font-size: 15px;
+      header.top nav {
+        display: flex;
+        gap: 24px;
+        font-size: 16px;
+      }
+      header.top nav a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      header.top nav a:hover {
+        color: var(--text);
       }
 
-      /* Hero */
-      .hero {
-        display: grid;
-        grid-template-columns: 1.05fr 1fr;
-        gap: 48px;
-        align-items: center;
-        padding: 40px 0 72px;
+      /* Intro */
+      .intro {
+        padding: 64px 0 40px;
       }
-      .eyebrow {
-        display: inline-block;
-        font-weight: 800;
-        font-size: 14px;
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: var(--soft);
-        color: var(--accent);
-      }
-      h1 {
-        font-size: clamp(36px, 5.2vw, 58px);
-        line-height: 1.05;
-        letter-spacing: -0.02em;
-        margin: 16px 0;
-        font-weight: 900;
-      }
-      .lede {
+      .intro .lede {
+        max-width: 38em;
+        margin: 20px 0 28px;
         font-size: 19px;
         color: var(--muted);
-        margin: 0 0 28px;
-        max-width: 34em;
       }
-      .cta {
+      .action {
         display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 16px 20px;
       }
-      .fine {
-        font-size: 14px;
+      .button {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 6px;
+        background: var(--accent);
+        color: var(--accent-text);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .button:hover {
+        filter: brightness(1.08);
+      }
+      .action small {
         color: var(--muted);
-        margin-top: 14px;
+        font-size: 15px;
+        max-width: 26em;
+        line-height: 1.45;
       }
 
-      /* Hero visual: a stylized video with SLang on it */
-      .player {
-        position: relative;
-        aspect-ratio: 16 / 10;
-        border-radius: 22px;
-        overflow: hidden;
-        box-shadow: var(--shadow);
-        background:
-          radial-gradient(circle at 78% 22%, #ffe9a8 0 7%, transparent 7.5%),
-          linear-gradient(
-            180deg,
-            #5ab0ff 0%,
-            #9ed6ff 46%,
-            #3d9be9 46.5%,
-            #6cc0f5 54%,
-            #f2d49b 54.5%,
-            #e8c27f 100%
-          );
+      /* The one picture */
+      figure.shot {
+        margin: 0 0 24px;
       }
-      .controls {
+      figure.shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      figure.shot figcaption {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      /* Sections: heading on the left, text on the right */
+      section {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 24px 56px;
+        padding: 56px 0;
+        border-top: 1px solid var(--line);
+      }
+      section .body {
+        max-width: 42em;
+      }
+      ol.steps {
+        list-style: none;
+        counter-reset: step;
+        margin: 0;
+        padding: 0;
+      }
+      ol.steps li {
+        counter-increment: step;
+        position: relative;
+        padding-left: 44px;
+        margin-bottom: 22px;
+      }
+      ol.steps li::before {
+        content: counter(step);
         position: absolute;
         left: 0;
-        right: 0;
-        bottom: 0;
-        height: 34px;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
-      }
-      .controls::after {
-        content: '';
-        position: absolute;
-        left: 14px;
-        right: 14px;
-        bottom: 12px;
-        height: 4px;
-        border-radius: 4px;
-        background: linear-gradient(90deg, #ff3d3d 38%, rgba(255, 255, 255, 0.4) 38%);
-      }
-      .cap {
-        position: absolute;
-        left: 41%;
-        bottom: 15%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        padding: 6px 16px 7px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, rgba(124, 77, 255, 0.92), rgba(255, 110, 64, 0.92));
-        color: #fff;
-        font-weight: 800;
-        font-size: clamp(15px, 2vw, 21px);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-      }
-      .cap .w {
-        position: relative;
-        text-decoration: underline 2px #ffd166;
-        text-underline-offset: 0.2em;
-      }
-      .pop {
-        position: absolute;
-        left: 49%;
-        bottom: 31%;
-        transform: translateX(-50%);
-        background: #212121;
-        color: #fff;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 14px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-        min-width: 160px;
-      }
-      .pop b {
-        font-size: 18px;
-      }
-      .pop span {
-        display: block;
-        color: #ccc;
-      }
-      .buddy {
-        position: absolute;
-        right: 2.5%;
-        bottom: 12%;
-        width: 17%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        animation: peek 3.4s ease-in-out infinite;
-      }
-      .buddy img {
-        width: 100%;
-      }
-      .bubble {
-        background: #fff;
-        color: #21173a;
-        font-weight: 800;
-        font-size: 14px;
-        padding: 4px 10px;
-        border-radius: 12px;
-        margin-bottom: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-      }
-      @keyframes peek {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-6px);
-        }
-      }
-
-      /* Sections */
-      section {
-        padding: 56px 0;
-      }
-      h2 {
-        font-size: clamp(28px, 3.6vw, 40px);
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        margin: 0 0 10px;
-        font-weight: 900;
-        text-align: center;
-      }
-      .sub {
-        text-align: center;
-        color: var(--muted);
-        margin: 0 auto 36px;
-        max-width: 36em;
-      }
-      .grid3 {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 18px;
-      }
-      .card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: var(--shadow);
-      }
-      .card .ic {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        font-size: 24px;
-        background: var(--soft);
-        margin-bottom: 12px;
-      }
-      .card h3 {
-        margin: 0 0 6px;
-        font-size: 20px;
-        font-weight: 900;
-      }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-      }
-
-      .steps {
-        counter-reset: s;
-      }
-      .steps .card h3::before {
-        counter-increment: s;
-        content: counter(s);
-        display: inline-grid;
-        place-items: center;
+        top: 0;
         width: 28px;
         height: 28px;
-        margin-right: 10px;
-        border-radius: 50%;
-        background: var(--grad);
-        color: #fff;
-        font-size: 15px;
-        vertical-align: 2px;
-      }
-
-      .plans {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
-        max-width: 820px;
-        margin: 0 auto;
-      }
-      .plan h3 {
-        font-size: 24px;
-      }
-      .plan .price {
-        font-size: 15px;
-        color: var(--muted);
-        margin-bottom: 14px;
-      }
-      .plan ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        gap: 9px;
-      }
-      .plan li::before {
-        content: '✓';
-        font-weight: 900;
-        color: var(--accent);
-        margin-right: 10px;
-      }
-      .plan.pro {
-        border: 2px solid transparent;
-        background:
-          linear-gradient(var(--card), var(--card)) padding-box,
-          var(--grad) border-box;
-      }
-      .plan.pro .tag {
-        float: right;
-        font-size: 13px;
-        font-weight: 800;
-        padding: 3px 10px;
-        border-radius: 999px;
-        background: var(--grad);
-        color: #fff;
-      }
-
-      .meet {
-        display: grid;
-        grid-template-columns: 220px 1fr;
-        gap: 36px;
-        align-items: center;
-        max-width: 860px;
-        margin: 0 auto;
-      }
-      .meet img {
-        width: 100%;
-        animation: peek 3.4s ease-in-out infinite;
-      }
-      .meet h2,
-      .meet .sub {
-        text-align: left;
-        margin-left: 0;
-      }
-      .quiz {
-        margin-top: 14px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        max-width: 420px;
-      }
-      .quiz span {
-        padding: 9px 14px;
-        border-radius: 12px;
         border: 1px solid var(--line);
-        background: var(--card);
-        font-weight: 700;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--muted);
       }
-      .quiz span.ok {
-        border-color: #2e7d32;
-        box-shadow: 0 0 0 3px color-mix(in srgb, #2e7d32 18%, transparent);
+      ol.steps p {
+        margin: 0;
+        color: var(--muted);
       }
 
-      .final {
-        text-align: center;
-        padding: 64px 24px;
-        border-radius: 28px;
-        background: var(--grad);
-        color: #fff;
-        box-shadow: var(--shadow);
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 16px;
       }
-      .final h2 {
-        color: #fff;
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px 10px 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
       }
-      .final p {
-        margin: 0 auto 26px;
-        max-width: 32em;
-        opacity: 0.92;
+      th {
+        font-weight: 600;
       }
-      .final .btn {
-        background: #fff;
-        color: #4b2bc9;
-        border: none;
+      td {
+        color: var(--muted);
+      }
+      td:first-child {
+        color: var(--text);
+      }
+      .note {
+        color: var(--muted);
+        font-size: 15px;
+        margin-top: 14px;
       }
 
       details {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 16px 20px;
-        margin: 0 auto 10px;
-        max-width: 760px;
+        border-bottom: 1px solid var(--line);
+        padding: 14px 0;
+      }
+      details:first-child {
+        padding-top: 0;
       }
       summary {
-        font-weight: 800;
         cursor: pointer;
+        font-weight: 600;
       }
       details p {
+        margin: 8px 0 0;
         color: var(--muted);
-        margin: 10px 0 0;
       }
+
       footer {
-        padding: 36px 0 48px;
-        text-align: center;
+        border-top: 1px solid var(--line);
+        padding: 32px 0 48px;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 15px;
+      }
+      footer p {
+        margin: 0 0 6px;
       }
 
       @media (max-width: 820px) {
-        .hero,
-        .grid3,
-        .plans,
-        .meet {
+        header.top nav {
+          display: none;
+        }
+        .intro {
+          padding: 40px 0 28px;
+        }
+        section {
           grid-template-columns: 1fr;
+          padding: 40px 0;
+          gap: 16px;
         }
-        .hero {
-          padding-top: 16px;
-          gap: 32px;
-        }
-        .meet img {
-          width: 160px;
-          margin: 0 auto;
-          display: block;
-        }
-        .meet h2,
-        .meet .sub {
-          text-align: center;
-          margin-left: auto;
-        }
-        .quiz {
-          margin: 14px auto 0;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          animation: none !important;
-          transition: none !important;
+        th,
+        td {
+          padding-right: 8px;
         }
       }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <nav>
-        <a class="brand" href="#"><img src="icon.png" width="36" height="36" alt="" /> SLang</a>
-        <a class="btn btn-primary" data-join href="#join">Join the waitlist</a>
-      </nav>
-
-      <header class="hero">
-        <div>
-          <span class="eyebrow">🎬 A Chrome extension for language learners</span>
-          <h1>Learn Spanish from the videos you <span class="grad-text">already watch</span>.</h1>
-          <p class="lede">
-            SLang turns YouTube into your Spanish class. Smart captions explain only the words you
-            don’t know, a natural Spanish voice dubs your favorite English videos, and Draco, a tiny
-            dragon, makes sure the new words stick.
-          </p>
-          <div class="cta">
-            <a class="btn btn-primary" data-join href="#join">✨ Join the Pro waitlist</a>
-            <a class="btn" href="#how">See how it works</a>
-          </div>
-          <p class="fine">Free to try. Runs on your computer. No account needed.</p>
-        </div>
-        <div
-          class="player"
-          role="img"
-          aria-label="A video with SLang's Spanish captions, a word explained, and Draco the dragon saying the word"
-        >
-          <div class="pop"><b>playa</b> 🔊<span>beach · noun</span></div>
-          <div class="cap">Hoy vamos a la <span class="w">playa</span> con mi perro.</div>
-          <div class="buddy">
-            <div class="bubble">playa</div>
-            <img src="draco.svg" alt="" />
-          </div>
-          <div class="controls"></div>
-        </div>
+      <header class="top">
+        <a class="brand" href="#"><img src="icon.png" width="32" height="32" alt="" />SLang</a>
+        <nav aria-label="Sections">
+          <a href="#how">How it works</a>
+          <a href="#words">Which words</a>
+          <a href="#languages">Languages</a>
+          <a href="#questions">Questions</a>
+        </nav>
       </header>
+
+      <main>
+        <div class="intro">
+          <h1>Learn a language from the YouTube videos you already watch</h1>
+          <p class="lede">
+            SLang is a free Chrome extension. On YouTube, it shows the video’s subtitles in the
+            language you are learning and writes a short translation above the words you probably
+            don’t know yet. Click any word to hear it, see what it means, and save it for review. It
+            can also dub English videos into Spanish with a voice that runs on your computer.
+          </p>
+          <div class="action">
+            <a class="button" data-join href="#">Join the waitlist</a>
+            <small>
+              A one-minute form. We’ll email you when SLang is available on the Chrome Web Store.
+            </small>
+          </div>
+        </div>
+
+        <figure class="shot">
+          <img
+            src="hero.png"
+            alt="SLang running on a YouTube video: Spanish subtitles with short English hints above two words, and the card that opens when a word is clicked."
+          />
+          <figcaption>
+            SLang on a Spanish video. Hints sit above the words you’re likely to miss; clicking a
+            word opens its meaning, pronunciation and a Save button.
+          </figcaption>
+        </figure>
+
+        <section id="how">
+          <h2>How it works</h2>
+          <div class="body">
+            <ol class="steps">
+              <li>
+                <h3>Open any video with subtitles</h3>
+                <p>
+                  SLang turns on the video’s subtitles in the language you’re learning, or YouTube’s
+                  automatic ones if that’s all there is, and shows them in its own caption box. You
+                  can drag the box out of the way and change its size and style.
+                </p>
+              </li>
+              <li>
+                <h3>Read along, look up what you need</h3>
+                <p>
+                  Words you probably don’t know get a short translation above them, at most two per
+                  line so the subtitles stay readable. Hover the caption to see the whole line in
+                  your own language. Click a word for its meaning, part of speech and pronunciation,
+                  and mark it as known, ignored or saved.
+                </p>
+              </li>
+              <li>
+                <h3>Review what you saved</h3>
+                <p>
+                  Saved words keep the sentence and the moment in the video where you met them. A
+                  short quiz asks you about saved words and about words you have seen several times.
+                  Words you miss come back sooner, using spaced repetition.
+                </p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section id="dubbing">
+          <h2>Dubbing English videos</h2>
+          <div class="body">
+            <p>
+              If a video is in English, SLang can translate its subtitles into Spanish and read them
+              aloud in time with the video, while the original sound plays quietly underneath. Lines
+              that run long are spoken a little faster, and the video waits briefly if a line still
+              needs time.
+            </p>
+            <p>
+              The natural-sounding Spanish voice is a small speech model (Kokoro) that runs on your
+              computer after a one-time download of about 90 MB. Other languages can be dubbed with
+              the voices built into your operating system.
+            </p>
+          </div>
+        </section>
+
+        <section id="words">
+          <h2>How SLang decides which words you know</h2>
+          <div class="body">
+            <p>
+              Common words are usually learned first. SLang ranks words by how often they appear in
+              film subtitles, books and websites, and starts from your level: either the one you
+              pick, or the result of a three-minute vocabulary check (Spanish for now). From that,
+              it estimates how likely you are to know each word.
+            </p>
+            <p>
+              The estimate changes as you watch. Looking up a word lowers it. Marking a word as
+              known settles it. Seeing a word several times without looking it up raises it a
+              little, and so does answering a quiz question about it correctly. Only words below the
+              threshold get a translation hint, so the captions get quieter as you learn.
+            </p>
+          </div>
+        </section>
+
+        <section id="languages">
+          <h2>Languages</h2>
+          <div class="body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Language</th>
+                  <th>Subtitles and word meanings</th>
+                  <th>Vocabulary check</th>
+                  <th>Dubbing voice</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Spanish</td>
+                  <td>Yes</td>
+                  <td>Yes</td>
+                  <td>Natural voice</td>
+                </tr>
+                <tr>
+                  <td>French</td>
+                  <td>Yes</td>
+                  <td>Not yet</td>
+                  <td>System voice</td>
+                </tr>
+                <tr>
+                  <td>German</td>
+                  <td>Yes</td>
+                  <td>Not yet</td>
+                  <td>System voice</td>
+                </tr>
+                <tr>
+                  <td>Japanese</td>
+                  <td>Yes</td>
+                  <td>Not yet</td>
+                  <td>System voice</td>
+                </tr>
+                <tr>
+                  <td>Korean</td>
+                  <td>Yes</td>
+                  <td>Not yet</td>
+                  <td>System voice</td>
+                </tr>
+                <tr>
+                  <td>English</td>
+                  <td>Yes</td>
+                  <td>Not yet</td>
+                  <td>System voice</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="note">
+              A natural French voice is next. It was the most requested language in our survey.
+            </p>
+          </div>
+        </section>
+
+        <section id="privacy">
+          <h2>Privacy</h2>
+          <div class="body">
+            <p>
+              Your word list, your progress and the subtitles of the videos you watch are stored in
+              your browser and stay on your computer. SLang has no account, no analytics and no
+              server of its own.
+            </p>
+            <p>
+              Translations come from the AI model built into Chrome, which also runs on your
+              computer. If you prefer, you can add your own Anthropic API key instead; subtitles are
+              then sent to that service to be translated.
+            </p>
+          </div>
+        </section>
+
+        <section id="questions">
+          <h2>Questions</h2>
+          <div class="body">
+            <details>
+              <summary>What do I need?</summary>
+              <p>
+                Chrome on a Mac, Windows or Linux computer, and videos that have subtitles. Chrome’s
+                built-in AI needs a one-time model download and a reasonably recent computer.
+              </p>
+            </details>
+            <details>
+              <summary>Does it cost anything?</summary>
+              <p>
+                SLang is free while it’s in beta. If we add a paid plan later, people on the
+                waitlist will hear about it first.
+              </p>
+            </details>
+            <details>
+              <summary>Does it work on Netflix or on my phone?</summary>
+              <p>
+                Not yet. SLang works on YouTube in desktop Chrome. A phone version is the second
+                most requested feature in our survey, and we’re looking into it.
+              </p>
+            </details>
+            <details>
+              <summary>What if a video has no subtitles in my language?</summary>
+              <p>
+                If it has English subtitles, SLang can translate them and dub the video. If it has
+                no subtitles at all, SLang tells you so and stays out of the way.
+              </p>
+            </details>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>
+          SLang is in beta. <a data-join href="#">Join the waitlist</a> to hear when it’s available.
+        </p>
+        <p>Word frequencies from wordfreq (CC BY-SA 4.0). Spanish voice: Kokoro (Apache 2.0).</p>
+      </footer>
     </div>
 
-    <section id="how">
-      <div class="wrap">
-        <h2>Your YouTube habit, now with <span class="grad-text">homework built in</span></h2>
-        <p class="sub">
-          No textbooks, no drills you’ll quit by Thursday. Just the videos you love, a little bit
-          Spanish-er.
-        </p>
-        <div class="grid3">
-          <div class="card">
-            <div class="ic">💬</div>
-            <h3>Captions that know you</h3>
-            <p>
-              SLang learns which words you know and only explains the rest, right above the word.
-              Tap any word for its meaning and pronunciation.
-            </p>
-          </div>
-          <div class="card">
-            <div class="ic">🎙️</div>
-            <h3>Dub anything into Spanish</h3>
-            <p>
-              Watching something in English? Flip on Dub mode and a natural Spanish voice reads
-              along, timed to the video. Guilty-pleasure videos now count as studying.
-            </p>
-          </div>
-          <div class="card">
-            <div class="ic">🐉</div>
-            <h3>Draco makes it stick</h3>
-            <p>
-              Save words with one click. Draco quizzes you on them later, with the exact clip you
-              heard them in, so they actually stay in your head.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <h2>Three steps. Zero textbooks.</h2>
-        <p class="sub">Set up takes about five minutes, mostly waiting for a download.</p>
-        <div class="grid3 steps">
-          <div class="card">
-            <h3>Add SLang to Chrome</h3>
-            <p>Pick your language and level, or take the two-minute level check.</p>
-          </div>
-          <div class="card">
-            <h3>Watch YouTube like normal</h3>
-            <p>Spanish videos get smart captions. English ones can be dubbed into Spanish.</p>
-          </div>
-          <div class="card">
-            <h3>Let Draco quiz you</h3>
-            <p>A quick five-word quiz now and then keeps your new words from slipping away.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap meet">
-        <img src="draco.svg" alt="Draco, SLang's purple dragon" />
-        <div>
-          <h2>Meet <span class="grad-text">Draco</span></h2>
-          <p class="sub">
-            Tap 🔊 on a word and Draco pops up to say it. Later, he’ll check whether it stuck. He’s
-            small, he’s purple, and he believes in you.
-          </p>
-          <p>
-            <b>What does <i>playa</i> mean?</b>
-          </p>
-          <div class="quiz">
-            <span class="ok">beach</span><span>dog</span><span>kitchen</span><span>market</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <h2>Free to start. <span class="grad-text">Pro</span> when you’re hooked.</h2>
-        <p class="sub">The core of SLang is free. Pro is coming, and the waitlist gets in first.</p>
-        <div class="plans">
-          <div class="card plan">
-            <h3>Free</h3>
-            <div class="price">Free</div>
-            <ul>
-              <li>Smart Spanish captions on YouTube</li>
-              <li>Word meanings and pronunciation</li>
-              <li>Save words with the clip they came from</li>
-              <li>Dub mode with your computer’s built-in voice</li>
-            </ul>
-          </div>
-          <div class="card plan pro">
-            <span class="tag">Coming soon</span>
-            <h3>Pro</h3>
-            <div class="price">Planned: about the price of a coffee a month</div>
-            <ul>
-              <li>Everything in Free</li>
-              <li>Natural, expressive Spanish dub voices</li>
-              <li>Unlimited Draco quizzes and spaced review</li>
-              <li>More languages and voices</li>
-              <li>Your words on every device you use</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <h2>Questions</h2>
-        <p class="sub">The short answers.</p>
-        <details>
-          <summary>Which languages does SLang support?</summary>
-          <p>
-            Spanish is the star right now, including the natural dub voice. Captions and word
-            meanings also work for French, Japanese, Korean and English, with more on the way.
-          </p>
-        </details>
-        <details>
-          <summary>Is my data private?</summary>
-          <p>
-            Yes. The words you know, the videos you watch and your saved words stay on your
-            computer. SLang has no account, no tracking and no server of its own.
-          </p>
-        </details>
-        <details>
-          <summary>Does it work on Netflix or my phone?</summary>
-          <p>
-            Not yet. SLang works on YouTube in Chrome on your computer. Tell us on the waitlist form
-            where you’d want it next.
-          </p>
-        </details>
-        <details>
-          <summary>What do I get for joining the waitlist?</summary>
-          <p>
-            Early access to SLang Pro before anyone else, and a say in what we build next. No spam,
-            just the occasional update.
-          </p>
-        </details>
-      </div>
-    </section>
-
-    <section id="join">
-      <div class="wrap">
-        <div class="final">
-          <h2>Your next video could be in Spanish.</h2>
-          <p>Join the waitlist and be first in line for SLang Pro. It takes ten seconds.</p>
-          <a class="btn" data-join href="#join">✨ Join the waitlist</a>
-        </div>
-      </div>
-    </section>
-
-    <footer>
-      <div class="wrap">SLang · Learn a language from the videos you already watch.</div>
-    </footer>
-
     <script>
-      // Paste your Google Form link here (Send → link icon → copy).
       const FORM_URL = 'https://forms.gle/CZVFfJMAEgyFLagM6';
-      if (FORM_URL) {
-        for (const a of document.querySelectorAll('[data-join]')) {
-          a.href = FORM_URL;
-          a.target = '_blank';
-          a.rel = 'noopener';
-        }
+      for (const a of document.querySelectorAll('[data-join]')) {
+        a.href = FORM_URL;
+        a.target = '_blank';
+        a.rel = 'noopener';
       }
     </script>
   </body>

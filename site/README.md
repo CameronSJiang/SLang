@@ -1,6 +1,9 @@
 # SLang waitlist page
 
-A single static page (`index.html` + `draco.svg` + `icon.png`); no build step.
+A single static page (`index.html` + `icon.png` + `hero.png`); no build step.
+
+`hero.png` is a real screenshot of SLang on a video (not committed until you add it): SLang captions
+with hints, a word card open. Use a video you're allowed to show publicly. About 2400 px wide is plenty.
 
 ## 1. Make the Google Form
 
