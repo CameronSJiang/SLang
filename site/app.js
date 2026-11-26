@@ -26,21 +26,92 @@
     saoPaulo: ['São Paulo', -23.55, -46.63],
     cairo: ['Cairo', 30.04, 31.24],
     toronto: ['Toronto', 43.65, -79.38],
+    rome: ['Rome', 41.9, 12.5],
+    chicago: ['Chicago', 41.88, -87.63],
+    amsterdam: ['Amsterdam', 52.37, 4.9],
+    singapore: ['Singapore', 1.35, 103.82],
+    mumbai: ['Mumbai', 19.08, 72.88],
+    sanFrancisco: ['San Francisco', 37.77, -122.42],
+    lisbon: ['Lisbon', 38.72, -9.14],
+    sydney: ['Sydney', -33.87, 151.21],
+    stockholm: ['Stockholm', 59.33, 18.07],
+    montreal: ['Montréal', 45.5, -73.57],
     mexicoCity: ['Mexico City', 19.43, -99.13],
+    dublin: ['Dublin', 53.35, -6.26],
+    istanbul: ['Istanbul', 41.01, 28.98],
+    vancouver: ['Vancouver', 49.28, -123.12],
+    nairobi: ['Nairobi', -1.29, 36.82],
+    austin: ['Austin', 30.27, -97.74],
+    warsaw: ['Warsaw', 52.23, 21.01],
+    seattle: ['Seattle', 47.61, -122.33],
+    buenosAires: ['Buenos Aires', -34.6, -58.38],
+    milan: ['Milan', 45.46, 9.19],
+    bangkok: ['Bangkok', 13.76, 100.5],
+    zurich: ['Zürich', 47.38, 8.54],
+    athens: ['Athens', 37.98, 23.73],
+    boston: ['Boston', 42.36, -71.06],
+    bogota: ['Bogotá', 4.71, -74.07],
+    lagos: ['Lagos', 6.52, 3.38],
+    taipei: ['Taipei', 25.03, 121.57],
+    losAngeles: ['Los Angeles', 34.05, -118.24],
+    vienna: ['Vienna', 48.21, 16.37],
+    melbourne: ['Melbourne', -37.81, 144.96],
+    prague: ['Prague', 50.08, 14.44],
+    jakarta: ['Jakarta', -6.21, 106.85],
+    santiago: ['Santiago', -33.45, -70.67],
+    dubai: ['Dubai', 25.2, 55.27],
+    accra: ['Accra', 5.6, -0.19],
+    hanoi: ['Hanoi', 21.03, 105.85],
+    capeTown: ['Cape Town', -33.92, 18.42],
+    manila: ['Manila', 14.6, 120.98],
+    lima: ['Lima', -12.05, -77.04],
+    helsinki: ['Helsinki', 60.17, 24.94],
   };
 
-  // Phrases that translate as they fly: [from, to, route, source phrase, target phrase].
+  // [from, to, language route, phrase, translation]
   const ROUTES = [
     ['madrid', 'newYork', 'ES → EN', 'que pasa', 'whats up'],
-    ['tokyo', 'london', 'JA → EN', 'konnichiwa', 'hello there'],
-    ['paris', 'seoul', 'FR → EN', "c'est parti", "let's go"],
-    ['berlin', 'saoPaulo', 'DE → PT', 'alles klar', 'tudo bem'],
-    ['cairo', 'toronto', 'AR → EN', 'ahlan wa sahlan', 'welcome in'],
-    ['london', 'mexicoCity', 'EN → ES', 'cheers mate', 'salud amigo'],
+    ['tokyo', 'london', 'JA → EN', 'hajimemashite', 'nice to meet you'],
+    ['paris', 'seoul', 'FR → EN', 'on y va', "let's go"],
+    ['berlin', 'saoPaulo', 'DE → PT', 'alles klar', 'tudo certo'],
+    ['cairo', 'toronto', 'AR → EN', 'marhaban', 'welcome in'],
+    ['rome', 'chicago', 'IT → EN', 'come va', "how's it going"],
+    ['amsterdam', 'singapore', 'NL → EN', 'goed bezig', 'great work'],
+    ['mumbai', 'sanFrancisco', 'HI → EN', 'kya haal hai', 'how are you'],
+    ['lisbon', 'sydney', 'PT → EN', 'vamos nessa', 'count me in'],
+    ['stockholm', 'montreal', 'SV → EN', 'vi hörs', 'talk soon'],
+    ['mexicoCity', 'dublin', 'ES → EN', 'qué onda', "what's the craic"],
+    ['istanbul', 'vancouver', 'TR → EN', 'ne haber', "what's new"],
+    ['nairobi', 'austin', 'SW → EN', 'habari yako', 'how are things'],
+    ['warsaw', 'seattle', 'PL → EN', 'wszystko gra', 'all good'],
+    ['buenosAires', 'milan', 'ES → IT', 'todo bien', 'tutto bene'],
+    ['bangkok', 'zurich', 'TH → EN', 'sabai dee mai', 'you doing well'],
+    ['athens', 'boston', 'EL → EN', 'ti kaneis', 'how are you'],
+    ['bogota', 'madrid', 'ES-CO → ES', 'qué más pues', 'qué tal todo'],
+    ['lagos', 'london', 'EN-NG → EN', 'how far', "what's good"],
+    ['taipei', 'losAngeles', 'ZH → EN', 'zài ma', 'you there'],
+    ['vienna', 'melbourne', 'DE-AT → EN', 'servus', "g'day mate"],
+    ['prague', 'austin', 'CS → EN', 'jak se máš', "how's life"],
+    ['jakarta', 'tokyo', 'ID → JA', 'apa kabar', 'ogenki desu ka'],
+    ['santiago', 'paris', 'ES-CL → FR', 'cachai', 'tu vois'],
+    ['dubai', 'newYork', 'AR → EN', 'yalla bina', "let's roll"],
+    ['seoul', 'toronto', 'KO → EN', 'jal jinaesseoyo', 'how have you been'],
+    ['accra', 'paris', 'TW → FR', 'ete sen', 'ça va'],
+    ['hanoi', 'berlin', 'VI → DE', 'khỏe không', "wie geht's"],
+    ['capeTown', 'amsterdam', 'EN-ZA → NL', 'howzit', 'hoe gaat het'],
+    ['manila', 'madrid', 'TL → ES', 'kumusta', 'qué tal'],
+    ['lima', 'rome', 'ES → IT', 'chévere', 'fantastico'],
+    ['helsinki', 'tokyo', 'FI → JA', 'moi moi', 'mata ne'],
   ];
 
-  const ARC_SCALE = 0.42; // must match .arcAltitudeAutoScale below
-  const MAX_IN_FLIGHT = 3;
+  // Pacing
+  const MIN_ACTIVE = 3;
+  const MAX_ACTIVE = 5;
+  const TRAIL_FADE_MS = 1500;
+  const PULSE_MS = 1100;
+  const NO_REPEAT = 10; // a route can't come back within this many launches
+
+  const ARC_SCALE = 0.42; // arc height relative to great-circle distance (three-globe's default shape)
   const fmtCoord = (lat, lng) =>
     `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(2)}°${lng >= 0 ? 'E' : 'W'}`;
   const rgba = (a) => `rgba(242, 169, 59, ${a})`;
@@ -156,34 +227,32 @@
     const el = document.getElementById('globe');
     if (!el || typeof window.Globe !== 'function') return;
 
+    const angleBetween = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
     const routes = ROUTES.map(([a, b, route, src, dst], i) => {
       const from = CITIES[a];
       const to = CITIES[b];
+      const curve = makeCurve(from, to);
+      const span = angleBetween(toVec(from[1], from[2]), toVec(to[1], to[2]));
       return {
         i,
+        a,
+        b,
         route,
         src,
         dst,
         from,
         to,
-        curve: makeCurve(from, to),
-        startLat: from[1],
-        startLng: from[2],
-        endLat: to[1],
-        endLng: to[2],
-        // Flight time grows a little with distance; staggered first launches.
-        duration:
-          6500 +
-          Math.acos(Math.max(-1, Math.min(1, dot(toVec(from[1], from[2]), toVec(to[1], to[2]))))) *
-            1600,
-        next: 600 + i * 1700,
-        start: -1,
+        curve,
+        mid: curve(0.5),
+        duration: 6000 + span * 1500,
       };
     });
-    const cities = [...new Set(ROUTES.flatMap((r) => [r[0], r[1]]))].map((k) => {
-      const [name, lat, lng] = CITIES[k];
-      return { name, lat, lng };
-    });
+    const cityKeys = [...new Set(ROUTES.flatMap((r) => [r[0], r[1]]))];
+    const cityPoints = cityKeys.map((k) => ({
+      name: CITIES[k][0],
+      lat: CITIES[k][1],
+      lng: CITIES[k][2],
+    }));
 
     let globe;
     try {
@@ -194,31 +263,15 @@
         .showAtmosphere(true)
         .atmosphereColor('#8a8f9c')
         .atmosphereAltitude(0.16)
-        .arcsData(routes)
-        .arcAltitudeAutoScale(ARC_SCALE)
-        .arcDashLength(1)
-        .arcDashGap(0)
-        .arcDashAnimateTime(0)
-        .pointsData(cities)
-        .pointColor(() => rgba(0.95))
-        .pointAltitude(0.006)
-        .pointRadius(0.32)
-        .pointLabel((d) => `<span class="globe-tip">${d.name}</span>`)
-        .ringsData(reduceMotion ? [] : cities)
-        .ringColor(() => (t) => rgba(0.5 * (1 - t)))
-        .ringMaxRadius(2.6)
-        .ringPropagationSpeed(1.4)
-        .ringRepeatPeriod(2400);
+        .pointsData(cityPoints)
+        .pointColor(() => rgba(0.55))
+        .pointAltitude(0.004)
+        .pointRadius(0.22)
+        .pointLabel((d) => `<span class="globe-tip">${d.name}</span>`);
     } catch {
       el.parentElement.style.display = 'none'; // no WebGL: the copy stands on its own
       return;
     }
-
-    const paintArcs = () =>
-      globe
-        .arcColor((d) => (d.start >= 0 ? [rgba(0.12), rgba(0.75)] : [rgba(0.05), rgba(0.2)]))
-        .arcStroke((d) => (d.start >= 0 ? 0.55 : 0.3));
-    paintArcs();
 
     const controls = globe.controls();
     controls.enableZoom = false;
@@ -229,7 +282,7 @@
     controls.dampingFactor = 0.08;
     globe.pointOfView({ lat: 28, lng: -35, altitude: 2.05 }, 0);
 
-    // 2D overlay for the travelling phrases: projected each frame, no 3D text geometry.
+    // 2D overlay for trails, phrases and pulses: projected each frame, no per-frame 3D geometry.
     const overlay = document.createElement('canvas');
     overlay.className = 'globe-text';
     overlay.setAttribute('aria-hidden', 'true');
@@ -237,7 +290,6 @@
     const ctx = overlay.getContext('2d');
     let W = 0;
     let H = 0;
-
     const fit = () => {
       const r = el.getBoundingClientRect();
       W = r.width;
@@ -258,33 +310,129 @@
 
     const R = globe.getGlobeRadius();
     const FONT = '500 13px "JetBrains Mono", ui-monospace, Menlo, monospace';
+    let cam = { x: 0, y: 0, z: 1 };
+    let camLen = 1;
 
-    function drawPacket(r, now) {
-      const t = clamp01((now - r.start) / r.duration);
-      const [x, y, z] = r.curve(t);
-      // Horizon test: hide text on the far side of the Earth (smooth fade near the limb).
-      const cam = globe.camera().position;
-      const camLen = Math.hypot(cam.x, cam.y, cam.z);
+    /** 0..1 visibility of a unit-space point: fades out past the Earth's limb. */
+    const visibility = ([x, y, z]) => {
       const pLen = Math.hypot(x, y, z);
       const cosAngle = (x * cam.x + y * cam.y + z * cam.z) / (pLen * camLen);
-      // A point at height pLen (globe radii) is in view while its angle from the camera
-      // direction is under acos(R/camLen) + acos(1/pLen).
       const limit = Math.cos(Math.acos(Math.min(1, R / camLen)) + Math.acos(Math.min(1, 1 / pLen)));
-      const occ = smooth(limit - 0.02, limit + 0.12, cosAngle);
-      const taper = smooth(0, 0.1, t) * (1 - smooth(0.9, 1, t));
-      const alpha = occ * taper;
-      if (alpha < 0.02) return;
-      const [lat, lng, rr] = toLatLng([x, y, z]);
-      const s = globe.getScreenCoords(lat, lng, rr - 1);
-      if (!Number.isFinite(s.x) || s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40) return;
+      return smooth(limit - 0.02, limit + 0.12, cosAngle);
+    };
+    const project = (p) => {
+      const [lat, lng, rr] = toLatLng(p);
+      return globe.getScreenCoords(lat, lng, rr - 1);
+    };
 
+    const active = []; // { r, start, end (landing time, or -1), }
+    const pulses = []; // { p (unit vec), start }
+    const history = [];
+    let nextLaunch = 400;
+
+    function pick() {
+      const busyCities = new Set(active.flatMap((x) => [x.r.a, x.r.b]));
+      const camDir = [cam.x / camLen, cam.y / camLen, cam.z / camLen];
+      let total = 0;
+      const options = [];
+      for (const r of routes) {
+        if (history.includes(r.i) || busyCities.has(r.a) || busyCities.has(r.b)) continue;
+        // Spread flights around the globe: prefer routes far from the ones already in the air.
+        const nearest = active.reduce(
+          (m, x) => Math.min(m, angleBetween(norm(r.mid), norm(x.r.mid))),
+          Math.PI,
+        );
+        let w = nearest > 0.9 ? 3 : nearest > 0.5 ? 1.5 : 0.4;
+        // ...and ones the viewer can currently see.
+        if (dot(norm(r.mid), camDir) > 0.15) w *= 2.5;
+        options.push([r, w]);
+        total += w;
+      }
+      let x = Math.random() * total;
+      for (const [r, w] of options) if ((x -= w) <= 0) return r;
+      return options[0]?.[0];
+    }
+    const norm = (v) => {
+      const l = Math.hypot(v[0], v[1], v[2]);
+      return [v[0] / l, v[1] / l, v[2] / l];
+    };
+
+    function launch(now) {
+      const r = pick();
+      if (!r) return;
+      active.push({ r, start: now, end: -1 });
+      history.push(r.i);
+      if (history.length > NO_REPEAT) history.shift();
+      pulses.push({ p: r.curve(0), start: now });
+      setTelemetry(r);
+    }
+
+    function drawPulse(pl, now) {
+      const k = (now - pl.start) / PULSE_MS;
+      if (k >= 1) return false;
+      const vis = visibility(pl.p);
+      if (vis < 0.02) return true;
+      const s = project(pl.p);
+      const ease = 1 - (1 - k) * (1 - k);
+      ctx.globalAlpha = vis * (1 - k) * 0.9;
+      ctx.strokeStyle = '#f2a93b';
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 3 + ease * 16, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      return true;
+    }
+
+    const SEGMENTS = 72;
+    /** Draw the arc between fractions t0..t1, brighter toward the head, dimmed by `fade`. */
+    function drawTrail(r, t0, t1, fade) {
+      if (t1 - t0 < 0.002) return;
+      const n = Math.max(2, Math.ceil(SEGMENTS * (t1 - t0)));
+      let prev = null;
+      let prevP = null;
+      ctx.lineCap = 'round';
+      for (let i = 0; i <= n; i++) {
+        const t = t0 + ((t1 - t0) * i) / n;
+        const p = r.curve(t);
+        const s = project(p);
+        if (prev) {
+          const along = (t - t0) / (t1 - t0 || 1); // 0 at the tail, 1 at the head
+          const vis = Math.min(visibility(p), visibility(prevP));
+          const a = vis * fade * (0.12 + 0.78 * along * along);
+          if (a > 0.01) {
+            // soft glow pass, then a crisp core
+            ctx.strokeStyle = rgba(a * 0.35);
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y);
+            ctx.lineTo(s.x, s.y);
+            ctx.stroke();
+            ctx.strokeStyle = rgba(a);
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y);
+            ctx.lineTo(s.x, s.y);
+            ctx.stroke();
+          }
+        }
+        prev = s;
+        prevP = p;
+      }
+    }
+
+    function drawPacket(r, t) {
+      const p = r.curve(t);
+      const alpha = visibility(p) * smooth(0, 0.08, t) * (1 - smooth(0.94, 1, t));
+      if (alpha < 0.02) return;
+      const s = project(p);
+      if (!Number.isFinite(s.x) || s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40) return;
       const text = morph(r.src, r.dst, t);
       ctx.font = FONT;
       const tw = ctx.measureText(text).width;
       const bx = Math.round(s.x - tw / 2 - 8);
       const by = Math.round(s.y - 32);
       ctx.globalAlpha = alpha;
-      // Plate: dark, hairline-bordered, small radius.
       ctx.fillStyle = 'rgba(9, 9, 11, 0.72)';
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.lineWidth = 1;
@@ -293,20 +441,17 @@
       else ctx.rect(bx + 0.5, by + 0.5, Math.round(tw + 16), 22);
       ctx.fill();
       ctx.stroke();
-      // Leader from the plate to the packet head.
       ctx.strokeStyle = rgba(0.35);
       ctx.beginPath();
       ctx.moveTo(Math.round(s.x) + 0.5, by + 23);
       ctx.lineTo(Math.round(s.x) + 0.5, s.y - 3);
       ctx.stroke();
-      // Text with a faint amber glow; locked states read brighter.
       const settled = t <= 0.2 || t >= 0.8;
       ctx.shadowColor = rgba(0.55);
       ctx.shadowBlur = 8;
       ctx.fillStyle = settled ? '#fafafa' : '#e7d3b0';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, bx + 8, by + 12);
-      // Packet head.
       ctx.fillStyle = '#f2a93b';
       ctx.shadowBlur = 10;
       ctx.beginPath();
@@ -316,50 +461,67 @@
       ctx.globalAlpha = 1;
     }
 
-    let running = true;
+    let running = false;
     let raf = 0;
-    const t0 = performance.now();
-    const frame = (nowAbs) => {
-      const now = nowAbs - t0;
-      ctx.clearRect(0, 0, W, H);
-      let inFlight = routes.filter((r) => r.start >= 0).length;
-      let changed = false;
-      for (const r of routes) {
-        if (r.start >= 0 && now - r.start >= r.duration) {
-          r.start = -1;
-          r.next = now + 2500 + Math.random() * 5000; // rest before the next flight
-          inFlight--;
-          changed = true;
+    let clock = 0; // animation time, which stops while paused
+    let last = 0;
+    const frame = (abs) => {
+      const dt = last ? Math.min(100, abs - last) : 16;
+      last = abs;
+      clock += dt;
+      const now = clock;
+      const c = globe.camera().position;
+      cam = { x: c.x, y: c.y, z: c.z };
+      camLen = Math.hypot(c.x, c.y, c.z);
+
+      // Landings and clean-up
+      for (let i = active.length - 1; i >= 0; i--) {
+        const x = active[i];
+        if (x.end < 0 && now - x.start >= x.r.duration) {
+          x.end = now;
+          pulses.push({ p: x.r.curve(1), start: now });
         }
-        if (r.start < 0 && now >= r.next) {
-          if (inFlight < MAX_IN_FLIGHT) {
-            r.start = now;
-            inFlight++;
-            changed = true;
-            setTelemetry(r);
-          } else {
-            r.next = now + 800; // try again shortly; keeps the screen uncluttered
-          }
+        if (x.end >= 0 && now - x.end >= TRAIL_FADE_MS) active.splice(i, 1);
+      }
+      // Keep 3–5 transmissions in the air, launched a little apart.
+      const flying = active.filter((x) => x.end < 0).length;
+      if (now >= nextLaunch) {
+        if (flying < MIN_ACTIVE || (flying < MAX_ACTIVE && Math.random() < 0.45)) launch(now);
+        nextLaunch = now + (flying < MIN_ACTIVE ? 900 : 1600 + Math.random() * 2400);
+      }
+
+      ctx.clearRect(0, 0, W, H);
+      for (let i = pulses.length - 1; i >= 0; i--)
+        if (!drawPulse(pulses[i], now)) pulses.splice(i, 1);
+      for (const x of active) {
+        if (x.end < 0) {
+          drawTrail(x.r, 0, clamp01((now - x.start) / x.r.duration), 1);
+        } else {
+          // Dissolve: the tail retracts toward the destination while the whole trail fades.
+          const f = clamp01((now - x.end) / TRAIL_FADE_MS);
+          drawTrail(x.r, f * f, 1, 1 - f);
         }
       }
-      if (changed) paintArcs();
-      for (const r of routes) if (r.start >= 0) drawPacket(r, now);
+      for (const x of active)
+        if (x.end < 0) drawPacket(x.r, clamp01((now - x.start) / x.r.duration));
       if (running) raf = requestAnimationFrame(frame);
     };
     const startLoop = () => {
-      if (running && raf) return;
+      if (running) return;
       running = true;
+      last = 0;
       raf = requestAnimationFrame(frame);
     };
     const stopLoop = () => {
       running = false;
       cancelAnimationFrame(raf);
-      raf = 0;
     };
 
     // Don't spend GPU/CPU while the hero is off screen or the tab is hidden.
+    let inView = true;
     new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) {
+      inView = e.isIntersecting;
+      if (inView) {
         globe.resumeAnimation();
         startLoop();
       } else {
@@ -368,7 +530,7 @@
       }
     }).observe(el);
     document.addEventListener('visibilitychange', () =>
-      document.hidden ? stopLoop() : startLoop(),
+      document.hidden || !inView ? stopLoop() : startLoop(),
     );
     const ready = document.fonts?.load ? document.fonts.load(FONT) : Promise.resolve();
     ready.finally(startLoop);
