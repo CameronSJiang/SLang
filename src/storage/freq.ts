@@ -4,6 +4,7 @@
  * content scripts, which ask the background instead.
  */
 import { browser } from 'wxt/browser';
+import { freqSpelling } from '../core/learner';
 
 export interface FreqList {
   words: readonly string[];
@@ -20,7 +21,7 @@ async function fetchList(lang: string): Promise<FreqList | null> {
   const text = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).text();
   const words = JSON.parse(text) as string[];
   const ranks = new Map(words.map((w, i) => [w, i + 1]));
-  return { words, rank: (w) => ranks.get(w) };
+  return { words, rank: (w) => ranks.get(freqSpelling(w, lang)) };
 }
 
 /** The frequency list for `lang` (base code), or null if we don't ship one. */

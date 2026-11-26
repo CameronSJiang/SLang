@@ -4,6 +4,7 @@ export const LANGUAGES = {
   en: 'English',
   es: 'Spanish',
   fr: 'French',
+  de: 'German',
   ja: 'Japanese',
   ko: 'Korean',
 } as const;

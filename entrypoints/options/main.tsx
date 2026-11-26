@@ -47,6 +47,7 @@ const DENSITY: Record<GlossDensity, { label: string; title: string }> = {
 const HELLO_WORD: Record<string, string> = {
   es: '¡Hola!',
   fr: 'Salut !',
+  de: 'Hallo!',
   ja: 'こんにちは',
   ko: '안녕하세요',
   en: 'Hello!',

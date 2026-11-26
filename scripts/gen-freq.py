@@ -15,7 +15,7 @@ import unicodedata
 
 from wordfreq import top_n_list
 
-LANGS = ["es", "fr", "en", "ja", "ko"]
+LANGS = ["es", "fr", "de", "en", "ja", "ko"]
 N = 20000
 OUT = pathlib.Path(__file__).resolve().parent.parent / "public" / "freq"
 

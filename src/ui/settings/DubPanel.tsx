@@ -10,6 +10,7 @@ import { NaturalVoice } from './NaturalVoice';
 const SAMPLE: Record<string, string> = {
   es: 'Hola, este vídeo ahora está doblado al español.',
   fr: 'Bonjour, cette vidéo est maintenant doublée en français.',
+  de: 'Hallo, dieses Video ist jetzt auf Deutsch synchronisiert.',
   ja: 'こんにちは。この動画は日本語に吹き替えられています。',
   ko: '안녕하세요. 이 영상은 한국어로 더빙되었습니다.',
   en: 'Hello, this video is now dubbed into English.',

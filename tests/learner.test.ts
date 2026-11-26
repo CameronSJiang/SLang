@@ -3,6 +3,7 @@ import {
   applyEvent,
   EXPOSURE_CAP_PER_SESSION,
   ExposureCounter,
+  freqSpelling,
   LEVEL_VOCAB,
   newEntry,
   priorPKnown,
@@ -64,5 +65,13 @@ describe('ExposureCounter', () => {
     const taken = Array.from({ length: 5 }, () => c.take('Casa')).filter(Boolean).length;
     expect(taken).toBe(EXPOSURE_CAP_PER_SESSION);
     expect(c.take('perro')).toBe(true);
+  });
+});
+
+describe('freqSpelling', () => {
+  it('folds ß to ss for German only', () => {
+    expect(freqSpelling('straße', 'de')).toBe('strasse');
+    expect(freqSpelling('weiß', 'de-AT')).toBe('weiss');
+    expect(freqSpelling('straße', 'es')).toBe('straße');
   });
 });

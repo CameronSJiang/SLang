@@ -16,6 +16,7 @@ import './welcome.css';
 const TRY_SEARCH: Record<string, string> = {
   es: 'dreaming spanish beginner',
   fr: 'french comprehensible input beginner',
+  de: 'german comprehensible input beginner',
   ja: 'comprehensible japanese beginner',
   ko: 'korean comprehensible input beginner',
   en: 'english comprehensible input beginner',
@@ -24,6 +25,7 @@ const TRY_SEARCH: Record<string, string> = {
 const HELLO: Record<string, string> = {
   es: '¡Hola!',
   fr: 'Salut !',
+  de: 'Hallo!',
   ja: 'こんにちは！',
   ko: '안녕하세요!',
   en: 'Hello!',

@@ -35,6 +35,14 @@ export function vocabFor(level: Level, vocabSize: number | null): number {
   return vocabSize ?? LEVEL_VOCAB[level];
 }
 
+/**
+ * How a word is spelled in our frequency lists (wordfreq): German folds ß to ss
+ * (straße → strasse), so look words up the same way.
+ */
+export function freqSpelling(word: string, lang: string): string {
+  return lang.split('-')[0] === 'de' ? word.replace(/ß/g, 'ss') : word;
+}
+
 export function lemmaKey(lemma: string): string {
   return lemma.normalize('NFC').toLocaleLowerCase().trim();
 }

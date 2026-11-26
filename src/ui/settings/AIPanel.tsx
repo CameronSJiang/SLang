@@ -12,6 +12,7 @@ import type { LLMProvider } from '@/src/llm/types';
 const SAMPLES: Record<string, string> = {
   es: '¿Qué tal? Hoy vamos a la playa con mis amigos para nadar y tomar el sol.',
   fr: 'Salut ! Aujourd’hui on va à la plage avec mes amis.',
+  de: 'Hallo! Heute fahren wir mit meinen Freunden an den Strand.',
   ja: 'こんにちは。今日は友達と海に行きます。',
   ko: '안녕하세요. 오늘은 친구들과 바다에 가요.',
   en: 'Hi! Today we are going to the beach with my friends.',
