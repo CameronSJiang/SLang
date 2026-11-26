@@ -1170,3 +1170,10 @@ td.no {
   font: 13px var(--mono);
   color: var(--text);
 }
+
+/* Travelling phrases overlay (drawn by app.js) */
+.globe-text {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

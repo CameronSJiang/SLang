@@ -16,67 +16,130 @@
   /* ---------------- Globe ---------------- */
 
   const CITIES = {
-    newYork: ['New York', 40.71, -74.01],
     madrid: ['Madrid', 40.42, -3.7],
-    pittsburgh: ['Pittsburgh', 40.44, -79.99],
-    mexicoCity: ['Mexico City', 19.43, -99.13],
+    newYork: ['New York', 40.71, -74.01],
+    tokyo: ['Tokyo', 35.68, 139.69],
     london: ['London', 51.51, -0.13],
     paris: ['Paris', 48.86, 2.35],
-    toronto: ['Toronto', 43.65, -79.38],
-    montreal: ['Montréal', 45.5, -73.57],
-    saoPaulo: ['São Paulo', -23.55, -46.63],
-    berlin: ['Berlin', 52.52, 13.4],
-    mumbai: ['Mumbai', 19.08, 72.88],
-    tokyo: ['Tokyo', 35.68, 139.69],
-    losAngeles: ['Los Angeles', 34.05, -118.24],
     seoul: ['Seoul', 37.57, 126.98],
-    lagos: ['Lagos', 6.52, 3.38],
-    sydney: ['Sydney', -33.87, 151.21],
-    buenosAires: ['Buenos Aires', -34.6, -58.38],
-    vienna: ['Vienna', 48.21, 16.37],
-    bogota: ['Bogotá', 4.71, -74.07],
+    berlin: ['Berlin', 52.52, 13.4],
+    saoPaulo: ['São Paulo', -23.55, -46.63],
+    cairo: ['Cairo', 30.04, 31.24],
+    toronto: ['Toronto', 43.65, -79.38],
+    mexicoCity: ['Mexico City', 19.43, -99.13],
   };
 
-  // Where a learner lives → where their target language is spoken.
+  // Phrases that translate as they fly: [from, to, route, source phrase, target phrase].
   const ROUTES = [
-    ['newYork', 'madrid', 'EN → ES'],
-    ['london', 'paris', 'EN → FR'],
-    ['mumbai', 'tokyo', 'HI → JA'],
-    ['saoPaulo', 'berlin', 'PT → DE'],
-    ['losAngeles', 'seoul', 'EN → KO'],
-    ['pittsburgh', 'mexicoCity', 'EN → ES'],
-    ['madrid', 'london', 'ES → EN'],
-    ['lagos', 'paris', 'EN → FR'],
-    ['sydney', 'tokyo', 'EN → JA'],
-    ['berlin', 'buenosAires', 'DE → ES'],
-    ['seoul', 'newYork', 'KO → EN'],
-    ['toronto', 'montreal', 'EN → FR'],
-    ['mexicoCity', 'vienna', 'ES → DE'],
-    ['bogota', 'paris', 'ES → FR'],
+    ['madrid', 'newYork', 'ES → EN', 'que pasa', 'whats up'],
+    ['tokyo', 'london', 'JA → EN', 'konnichiwa', 'hello there'],
+    ['paris', 'seoul', 'FR → EN', "c'est parti", "let's go"],
+    ['berlin', 'saoPaulo', 'DE → PT', 'alles klar', 'tudo bem'],
+    ['cairo', 'toronto', 'AR → EN', 'ahlan wa sahlan', 'welcome in'],
+    ['london', 'mexicoCity', 'EN → ES', 'cheers mate', 'salud amigo'],
   ];
 
+  const ARC_SCALE = 0.42; // must match .arcAltitudeAutoScale below
+  const MAX_IN_FLIGHT = 3;
   const fmtCoord = (lat, lng) =>
     `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(2)}°${lng >= 0 ? 'E' : 'W'}`;
-
-  const arcs = ROUTES.map(([a, b, route], i) => {
-    const [fromName, startLat, startLng] = CITIES[a];
-    const [toName, endLat, endLng] = CITIES[b];
-    return { i, route, fromName, toName, startLat, startLng, endLat, endLng };
-  });
-  const points = Object.values(CITIES).map(([name, lat, lng]) => ({ name, lat, lng }));
-
-  let active = 0;
   const rgba = (a) => `rgba(242, 169, 59, ${a})`;
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const smooth = (e0, e1, x) => {
+    const t = clamp01((x - e0) / (e1 - e0));
+    return t * t * (3 - 2 * t);
+  };
 
-  function setTelemetry(arc) {
+  /* Arc geometry: the same cubic Bézier three-globe draws (calcCurve in three-globe), so the
+     text rides exactly on the visible line. Unit-radius space; scaled when projected. */
+  const D2R = Math.PI / 180;
+  const toVec = (lat, lng) => {
+    const phi = (90 - lat) * D2R;
+    const theta = (90 - lng) * D2R;
+    return [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)];
+  };
+  const toLatLng = ([x, y, z]) => {
+    const r = Math.hypot(x, y, z);
+    const phi = Math.acos(y / r);
+    const theta = Math.atan2(z, x);
+    return [90 - phi / D2R, 90 - theta / D2R, r];
+  };
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  /** Great-circle point at fraction t (slerp), like d3-geo's geoInterpolate. */
+  const slerp = (a, b, t) => {
+    const omega = Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
+    if (omega < 1e-6) return a.slice();
+    const s = Math.sin(omega);
+    const k0 = Math.sin((1 - t) * omega) / s;
+    const k1 = Math.sin(t * omega) / s;
+    return [a[0] * k0 + b[0] * k1, a[1] * k0 + b[1] * k1, a[2] * k0 + b[2] * k1];
+  };
+
+  function makeCurve(from, to) {
+    const a = toVec(from[1], from[2]);
+    const b = toVec(to[1], to[2]);
+    const omega = Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
+    const alt = (omega / 2) * ARC_SCALE;
+    const cpAlt = alt * 1.5; // three-globe: a1 + (a1 - a0) * 0.5 with a0 = 0
+    const scale = (v, r) => [v[0] * r, v[1] * r, v[2] * r];
+    const p0 = a;
+    const p1 = scale(slerp(a, b, 0.25), 1 + cpAlt);
+    const p2 = scale(slerp(a, b, 0.75), 1 + cpAlt);
+    const p3 = b;
+    return (t) => {
+      const u = 1 - t;
+      const c0 = u * u * u;
+      const c1 = 3 * u * u * t;
+      const c2 = 3 * u * t * t;
+      const c3 = t * t * t;
+      return [0, 1, 2].map((i) => c0 * p0[i] + c1 * p1[i] + c2 * p2[i] + c3 * p3[i]);
+    };
+  }
+
+  /* Text morph: each character steps through the alphabet toward its target, one column after
+     another, like a split-flap board, so in-between states stay readable. */
+  const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+  const plain = (c) => c.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  function charAt(from, to, p) {
+    // p: 0..1 progress of this column's change
+    if (p <= 0) return from;
+    if (p >= 1) return to;
+    const a = ALPHA.indexOf(plain(from));
+    const b = ALPHA.indexOf(plain(to));
+    if (a < 0 || b < 0) return p < 0.5 ? from : to; // spaces and punctuation swap at midpoint
+    let d = b - a;
+    if (d > 13) d -= 26;
+    if (d < -13) d += 26;
+    const steps = Math.abs(d);
+    const k = Math.round(p * steps);
+    return ALPHA[(a + Math.sign(d) * k + 26) % 26];
+  }
+  function morph(src, dst, t) {
+    if (t <= 0.2) return src;
+    if (t >= 0.8) return dst;
+    const p = (t - 0.2) / 0.6;
+    const n = Math.max(src.length, dst.length);
+    const a = src.padEnd(n, ' ');
+    const b = dst.padEnd(n, ' ');
+    const window = 0.45; // share of the morph each column spends changing
+    let out = '';
+    for (let i = 0; i < n; i++) {
+      const start = (i / Math.max(1, n - 1)) * (1 - window);
+      out += charAt(a[i], b[i], (p - start) / window);
+    }
+    return out.replace(/\s+$/, '');
+  }
+
+  function setTelemetry(r) {
     const fields = [
-      ['t-route', arc.route],
-      ['t-from', `${arc.fromName} · ${fmtCoord(arc.startLat, arc.startLng)}`],
-      ['t-to', `${arc.toName} · ${fmtCoord(arc.endLat, arc.endLng)}`],
+      ['t-route', r.route],
+      ['t-from', `${r.from[0]} · ${fmtCoord(r.from[1], r.from[2])}`],
+      ['t-to', `${r.to[0]} · ${fmtCoord(r.to[1], r.to[2])}`],
+      ['t-phrase', `${r.src} → ${r.dst}`],
     ];
     for (const [id, text] of fields) {
       const el = document.getElementById(id);
-      if (!el) continue;
+      if (!el || el.textContent === text) continue;
       if (reduceMotion) {
         el.textContent = text;
         continue;
@@ -92,6 +155,36 @@
   function initGlobe() {
     const el = document.getElementById('globe');
     if (!el || typeof window.Globe !== 'function') return;
+
+    const routes = ROUTES.map(([a, b, route, src, dst], i) => {
+      const from = CITIES[a];
+      const to = CITIES[b];
+      return {
+        i,
+        route,
+        src,
+        dst,
+        from,
+        to,
+        curve: makeCurve(from, to),
+        startLat: from[1],
+        startLng: from[2],
+        endLat: to[1],
+        endLng: to[2],
+        // Flight time grows a little with distance; staggered first launches.
+        duration:
+          6500 +
+          Math.acos(Math.max(-1, Math.min(1, dot(toVec(from[1], from[2]), toVec(to[1], to[2]))))) *
+            1600,
+        next: 600 + i * 1700,
+        start: -1,
+      };
+    });
+    const cities = [...new Set(ROUTES.flatMap((r) => [r[0], r[1]]))].map((k) => {
+      const [name, lat, lng] = CITIES[k];
+      return { name, lat, lng };
+    });
+
     let globe;
     try {
       globe = new window.Globe(el, { animateIn: !reduceMotion })
@@ -101,36 +194,30 @@
         .showAtmosphere(true)
         .atmosphereColor('#8a8f9c')
         .atmosphereAltitude(0.16)
-        .arcsData(arcs)
-        .arcStartLat('startLat')
-        .arcStartLng('startLng')
-        .arcEndLat('endLat')
-        .arcEndLng('endLng')
-        .arcAltitudeAutoScale(0.42)
-        .arcDashLength(0.45)
-        .arcDashGap(1.2)
-        .arcDashInitialGap((d) => (d.i * 0.37) % 2)
-        .arcDashAnimateTime(reduceMotion ? 0 : 3200)
-        .pointsData(points)
+        .arcsData(routes)
+        .arcAltitudeAutoScale(ARC_SCALE)
+        .arcDashLength(1)
+        .arcDashGap(0)
+        .arcDashAnimateTime(0)
+        .pointsData(cities)
         .pointColor(() => rgba(0.95))
         .pointAltitude(0.006)
         .pointRadius(0.32)
         .pointLabel((d) => `<span class="globe-tip">${d.name}</span>`)
-        .ringsData(reduceMotion ? [] : points)
-        .ringColor(() => (t) => rgba(0.55 * (1 - t)))
+        .ringsData(reduceMotion ? [] : cities)
+        .ringColor(() => (t) => rgba(0.5 * (1 - t)))
         .ringMaxRadius(2.6)
         .ringPropagationSpeed(1.4)
-        .ringRepeatPeriod(2200);
+        .ringRepeatPeriod(2400);
     } catch {
       el.parentElement.style.display = 'none'; // no WebGL: the copy stands on its own
       return;
     }
 
-    const paintArcs = () => {
+    const paintArcs = () =>
       globe
-        .arcColor((d) => (d.i === active ? [rgba(0.15), ACCENT] : [rgba(0.04), rgba(0.42)]))
-        .arcStroke((d) => (d.i === active ? 0.7 : 0.3));
-    };
+        .arcColor((d) => (d.start >= 0 ? [rgba(0.12), rgba(0.75)] : [rgba(0.05), rgba(0.2)]))
+        .arcStroke((d) => (d.start >= 0 ? 0.55 : 0.3));
     paintArcs();
 
     const controls = globe.controls();
@@ -142,27 +229,149 @@
     controls.dampingFactor = 0.08;
     globe.pointOfView({ lat: 28, lng: -35, altitude: 2.05 }, 0);
 
+    // 2D overlay for the travelling phrases: projected each frame, no 3D text geometry.
+    const overlay = document.createElement('canvas');
+    overlay.className = 'globe-text';
+    overlay.setAttribute('aria-hidden', 'true');
+    el.parentElement.insertBefore(overlay, el.nextSibling);
+    const ctx = overlay.getContext('2d');
+    let W = 0;
+    let H = 0;
+
     const fit = () => {
       const r = el.getBoundingClientRect();
-      globe.width(r.width).height(r.height);
+      W = r.width;
+      H = r.height;
+      globe.width(W).height(H);
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      overlay.width = Math.round(W * dpr);
+      overlay.height = Math.round(H * dpr);
+      overlay.style.width = `${W}px`;
+      overlay.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     fit();
     new ResizeObserver(fit).observe(el);
 
-    // Don't spend GPU time while the globe is off screen.
-    new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) globe.resumeAnimation();
-      else globe.pauseAnimation();
-    }).observe(el);
+    setTelemetry(routes[0]);
+    if (reduceMotion) return;
 
-    setTelemetry(arcs[active]);
-    if (!reduceMotion) {
-      setInterval(() => {
-        active = (active + 1) % arcs.length;
-        paintArcs();
-        setTelemetry(arcs[active]);
-      }, 3600);
+    const R = globe.getGlobeRadius();
+    const FONT = '500 13px "JetBrains Mono", ui-monospace, Menlo, monospace';
+
+    function drawPacket(r, now) {
+      const t = clamp01((now - r.start) / r.duration);
+      const [x, y, z] = r.curve(t);
+      // Horizon test: hide text on the far side of the Earth (smooth fade near the limb).
+      const cam = globe.camera().position;
+      const camLen = Math.hypot(cam.x, cam.y, cam.z);
+      const pLen = Math.hypot(x, y, z);
+      const cosAngle = (x * cam.x + y * cam.y + z * cam.z) / (pLen * camLen);
+      // A point at height pLen (globe radii) is in view while its angle from the camera
+      // direction is under acos(R/camLen) + acos(1/pLen).
+      const limit = Math.cos(Math.acos(Math.min(1, R / camLen)) + Math.acos(Math.min(1, 1 / pLen)));
+      const occ = smooth(limit - 0.02, limit + 0.12, cosAngle);
+      const taper = smooth(0, 0.1, t) * (1 - smooth(0.9, 1, t));
+      const alpha = occ * taper;
+      if (alpha < 0.02) return;
+      const [lat, lng, rr] = toLatLng([x, y, z]);
+      const s = globe.getScreenCoords(lat, lng, rr - 1);
+      if (!Number.isFinite(s.x) || s.x < -80 || s.x > W + 80 || s.y < -40 || s.y > H + 40) return;
+
+      const text = morph(r.src, r.dst, t);
+      ctx.font = FONT;
+      const tw = ctx.measureText(text).width;
+      const bx = Math.round(s.x - tw / 2 - 8);
+      const by = Math.round(s.y - 32);
+      ctx.globalAlpha = alpha;
+      // Plate: dark, hairline-bordered, small radius.
+      ctx.fillStyle = 'rgba(9, 9, 11, 0.72)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx + 0.5, by + 0.5, Math.round(tw + 16), 22, 4);
+      else ctx.rect(bx + 0.5, by + 0.5, Math.round(tw + 16), 22);
+      ctx.fill();
+      ctx.stroke();
+      // Leader from the plate to the packet head.
+      ctx.strokeStyle = rgba(0.35);
+      ctx.beginPath();
+      ctx.moveTo(Math.round(s.x) + 0.5, by + 23);
+      ctx.lineTo(Math.round(s.x) + 0.5, s.y - 3);
+      ctx.stroke();
+      // Text with a faint amber glow; locked states read brighter.
+      const settled = t <= 0.2 || t >= 0.8;
+      ctx.shadowColor = rgba(0.55);
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = settled ? '#fafafa' : '#e7d3b0';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, bx + 8, by + 12);
+      // Packet head.
+      ctx.fillStyle = '#f2a93b';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
     }
+
+    let running = true;
+    let raf = 0;
+    const t0 = performance.now();
+    const frame = (nowAbs) => {
+      const now = nowAbs - t0;
+      ctx.clearRect(0, 0, W, H);
+      let inFlight = routes.filter((r) => r.start >= 0).length;
+      let changed = false;
+      for (const r of routes) {
+        if (r.start >= 0 && now - r.start >= r.duration) {
+          r.start = -1;
+          r.next = now + 2500 + Math.random() * 5000; // rest before the next flight
+          inFlight--;
+          changed = true;
+        }
+        if (r.start < 0 && now >= r.next) {
+          if (inFlight < MAX_IN_FLIGHT) {
+            r.start = now;
+            inFlight++;
+            changed = true;
+            setTelemetry(r);
+          } else {
+            r.next = now + 800; // try again shortly; keeps the screen uncluttered
+          }
+        }
+      }
+      if (changed) paintArcs();
+      for (const r of routes) if (r.start >= 0) drawPacket(r, now);
+      if (running) raf = requestAnimationFrame(frame);
+    };
+    const startLoop = () => {
+      if (running && raf) return;
+      running = true;
+      raf = requestAnimationFrame(frame);
+    };
+    const stopLoop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    // Don't spend GPU/CPU while the hero is off screen or the tab is hidden.
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        globe.resumeAnimation();
+        startLoop();
+      } else {
+        globe.pauseAnimation();
+        stopLoop();
+      }
+    }).observe(el);
+    document.addEventListener('visibilitychange', () =>
+      document.hidden ? stopLoop() : startLoop(),
+    );
+    const ready = document.fonts?.load ? document.fonts.load(FONT) : Promise.resolve();
+    ready.finally(startLoop);
   }
 
   /* ---------------- Tabs ---------------- */
