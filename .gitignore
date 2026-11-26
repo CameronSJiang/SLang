@@ -5,3 +5,6 @@ dist/
 *.log
 .env*
 web-ext.config.ts
+
+# Netlify CLI link state
+.netlify/
