@@ -58,6 +58,7 @@
       <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></symbol>
       <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10M7 17 17 7" /></symbol>
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
     </svg>
 
     <header class="nav">
@@ -69,6 +70,7 @@
         <nav class="nav-links" aria-label="Primary">
           <a href="#capabilities">How it works</a>
           <a href="#languages">Languages</a>
+          <a href="#pricing">Pricing</a>
           <a href="#privacy">Privacy</a>
           <a href="#faq">FAQ</a>
         </nav>
@@ -138,7 +140,7 @@
           </div>
           <div class="fact">
             <span class="fact-n mono">0</span>
-            <span class="fact-l">accounts, servers or trackers</span>
+            <span class="fact-l">accounts or trackers in the free version</span>
           </div>
           <div class="fact">
             <span class="fact-n mono">23</span>
@@ -475,12 +477,108 @@
         </div>
       </section>
 
+      <!-- Pricing -->
+      <section id="pricing" class="section split">
+        <div class="container split-inner">
+          <div class="split-side reveal">
+            <p class="eyebrow mono">03 — Pricing</p>
+            <h2>Free on your computer. Pro for what runs in the cloud.</h2>
+            <p class="lede">
+              Everything that runs on your own machine costs us nothing, so it stays free. Pro pays
+              for the parts that need our servers: cloud translation costs about 3¢ per hour of
+              video, and more voices take time to build.
+            </p>
+            <p class="lede small">
+              Planned pricing. The waitlist gets first access and the founding price.
+            </p>
+          </div>
+          <div class="pricing reveal">
+            <div class="plans">
+              <div class="plan">
+                <p class="plan-name">Free</p>
+                <p class="plan-price mono">$0</p>
+                <ul>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg>Subtitles with word hints in 6
+                    languages
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg>Word meanings, pronunciation and
+                    saving
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg>Draco’s quizzes with spaced
+                    review
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg>Spanish dubbing with the
+                    on-device voice
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg>Translation by Chrome’s built-in
+                    AI, or your own API key
+                  </li>
+                </ul>
+              </div>
+              <div class="plan plan-pro">
+                <p class="plan-name">Pro <span class="mono tag">planned</span></p>
+                <p class="plan-price mono">$3.99<span>/month</span></p>
+                <ul>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg
+                    ><span
+                      ><b>Cloud translations.</b> Sharper meanings and line translations on any
+                      computer, without Chrome’s multi-GB AI download.</span
+                    >
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg
+                    ><span
+                      ><b>Slang and idiom notes.</b> Informal phrases explained in context, the most
+                      requested idea in our survey’s comments.</span
+                    >
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg
+                    ><span
+                      ><b>More natural voices.</b> French first, then more languages and
+                      voices.</span
+                    >
+                  </li>
+                  <li>
+                    <svg class="icon"><use href="#i-check" /></svg><span>Everything in Free.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <dl class="billing mono">
+              <div>
+                <dt>Monthly</dt>
+                <dd>$3.99</dd>
+              </div>
+              <div>
+                <dt>Yearly</dt>
+                <dd>$29.99 · about $2.50 a month</dd>
+              </div>
+              <div>
+                <dt>Students</dt>
+                <dd>$1.99 a month with a school email</dd>
+              </div>
+              <div>
+                <dt>Founding lifetime</dt>
+                <dd>$39 once · waitlist only, first 200</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
       <!-- Privacy (short, anchor target) + FAQ -->
       <section id="privacy" class="section split">
         <div class="container split-inner">
           <div class="split-side reveal">
-            <p class="eyebrow mono">03 — Privacy</p>
-            <h2>No account. No server. Nothing to leak.</h2>
+            <p class="eyebrow mono">04 — Privacy</p>
+            <h2>Your words and your viewing stay yours.</h2>
           </div>
           <div class="prose reveal">
             <p>
@@ -489,9 +587,15 @@
               the data goes with it.
             </p>
             <p>
-              The only time anything leaves your machine is if you add your own Anthropic API key
-              for higher-quality translations. Then the subtitles of the video you’re watching are
-              sent to Anthropic to be translated. You can remove the key at any time.
+              In the free version, the only time anything leaves your machine is if you add your own
+              Anthropic API key. Then the subtitles of the video you’re watching are sent to
+              Anthropic to be translated. You can remove the key at any time.
+            </p>
+            <p>
+              Pro’s cloud translations will work the same way: the subtitles being translated go to
+              our server and on to the AI model, and nothing else does. Your word list, quiz results
+              and watch history stay on your computer. Pro needs an account only for billing.
+              <a class="inline-link" href="privacy.html">Read the full privacy policy</a>.
             </p>
           </div>
         </div>
@@ -500,7 +604,7 @@
       <section id="faq" class="section split">
         <div class="container split-inner">
           <div class="split-side reveal">
-            <p class="eyebrow mono">04 — Questions</p>
+            <p class="eyebrow mono">05 — Questions</p>
             <h2>Before you sign up</h2>
             <p class="lede">
               SLang is in beta. The waitlist is a one-minute form; we email you when it’s on the
@@ -526,8 +630,9 @@
                 Does it cost anything?<svg class="icon"><use href="#i-chevron" /></svg>
               </summary>
               <p>
-                SLang is free while it’s in beta. If a paid plan comes later, people on the waitlist
-                hear about it first.
+                No. Everything that runs on your computer is free. A Pro plan is planned for
+                features that need servers, like cloud translations; it’s about $4 a month, with
+                yearly, student and founding prices. The waitlist hears about it first.
               </p>
             </details>
             <details>
@@ -584,7 +689,8 @@
           <h4>Product</h4>
           <a href="#capabilities">How it works</a>
           <a href="#languages">Languages</a>
-          <a href="#privacy">Privacy</a>
+          <a href="#pricing">Pricing</a>
+          <a href="privacy.html">Privacy policy</a>
           <a href="#faq">FAQ</a>
         </div>
         <div>

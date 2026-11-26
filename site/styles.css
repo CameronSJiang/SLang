@@ -1025,3 +1025,148 @@ td.no {
   background: rgba(9, 9, 11, 0.9);
   color: var(--text);
 }
+
+/* Pricing */
+.lede.small {
+  font-size: 14px;
+  color: var(--dim);
+}
+.plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.plan {
+  padding: 28px;
+}
+.plan + .plan {
+  border-left: 1px solid var(--line);
+}
+.plan-pro {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.plan-name {
+  font-weight: 500;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plan-name .tag {
+  font-size: 11px;
+  color: var(--accent);
+  border: 1px solid rgba(242, 169, 59, 0.35);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.plan-price {
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 10px 0 22px;
+}
+.plan-price span {
+  font-size: 14px;
+  color: var(--dim);
+  margin-left: 4px;
+}
+.plan ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.plan li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.plan li .icon {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  color: var(--accent);
+}
+.plan li b {
+  color: var(--text);
+  font-weight: 500;
+}
+.billing {
+  margin: 20px 0 0;
+  font-size: 12.5px;
+  border-top: 1px solid var(--line);
+}
+.billing div {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.billing dt {
+  color: var(--dim);
+}
+.billing dd {
+  margin: 0;
+  color: var(--text);
+}
+.inline-link {
+  color: var(--text);
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--line-strong);
+}
+@media (max-width: 820px) {
+  .plans {
+    grid-template-columns: 1fr;
+  }
+  .plan + .plan {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+  .billing div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Privacy policy page */
+.policy {
+  max-width: 760px;
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
+.policy h1 {
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1.1;
+}
+.policy h2 {
+  font-size: 22px;
+  margin: 48px 0 12px;
+}
+.policy-lede {
+  margin-top: 20px;
+  font-size: 18px;
+  color: var(--muted);
+}
+.policy p,
+.policy li {
+  color: var(--muted);
+}
+.policy ul {
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+}
+.policy b {
+  color: var(--text);
+  font-weight: 500;
+}
+.policy code {
+  font: 13px var(--mono);
+  color: var(--text);
+}

@@ -20,6 +20,7 @@ export default defineConfig({
   manifest: {
     name: 'SLang',
     description: 'Learn a language from the videos you already watch.',
+    homepage_url: 'https://golden-khapse-cd903e.netlify.app/',
     permissions: ['storage', 'activeTab', 'scripting', 'offscreen'],
     host_permissions: ['*://*.youtube.com/*'],
     // On-device voices (Kokoro) run WebAssembly in extension pages.

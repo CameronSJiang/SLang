@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SLang privacy policy</title>
+    <meta
+      name="description"
+      content="What the SLang Chrome extension stores, what it sends, and to whom."
+    />
+    <meta name="theme-color" content="#09090b" />
+    <link rel="icon" href="icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="index.html" aria-label="SLang home">
+          <img src="icon.png" width="24" height="24" alt="" />
+          <span>SLang</span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="index.html#capabilities">How it works</a>
+          <a href="index.html#pricing">Pricing</a>
+          <a href="index.html#faq">FAQ</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container policy">
+      <p class="eyebrow mono">Privacy policy · last updated November 26, 2026</p>
+      <h1>What SLang keeps, and what it sends</h1>
+      <p class="policy-lede">
+        Short version: SLang stores everything it learns about you in your own browser. It has no
+        account, no analytics, no ads and no server. Data leaves your computer only in the cases
+        listed under “What leaves your computer”.
+      </p>
+
+      <h2>What SLang stores on your computer</h2>
+      <ul>
+        <li>
+          <b>Subtitles</b> of the YouTube videos you watch with SLang on, and the translations and
+          word meanings made from them, so a video doesn’t have to be translated twice.
+        </li>
+        <li>
+          <b>Your word list:</b> words you looked up, saved, marked as known or ignored, the
+          sentence and video moment they came from, and SLang’s estimate of which words you know.
+        </li>
+        <li><b>Quiz and review history</b> for saved words.</li>
+        <li>
+          <b>Settings</b>, including your languages and level, and an Anthropic API key if you
+          choose to add one.
+        </li>
+      </ul>
+      <p>
+        This lives in the extension’s browser storage (IndexedDB and
+        <code>chrome.storage.local</code>). It is not synced and not sent to us. Uninstalling SLang
+        deletes it.
+      </p>
+
+      <h2>What leaves your computer</h2>
+      <ul>
+        <li>
+          <b>Only if you add your own Anthropic API key:</b> the text of the subtitles being
+          translated, and the names of your two languages, are sent to Anthropic’s API
+          (api.anthropic.com) to be translated. Anthropic handles that data under its own terms and
+          privacy policy. Remove the key in SLang’s settings to stop this.
+        </li>
+        <li>
+          <b>If you download the natural voice:</b> SLang downloads the voice model files (about 90
+          MB) from Hugging Face (huggingface.co). This is an ordinary file download; nothing about
+          you or what you watch is included.
+        </li>
+        <li>
+          <b>Chrome’s built-in AI</b>, which SLang uses for translation by default, runs on your
+          computer. Chrome may download its model, which is governed by Google’s policies.
+        </li>
+      </ul>
+
+      <h2>What SLang does not do</h2>
+      <ul>
+        <li>No analytics, telemetry or tracking.</li>
+        <li>No ads, and no selling or sharing of data.</li>
+        <li>No account and no SLang server.</li>
+        <li>
+          It doesn’t read pages other than YouTube unless you click “Show captions on this page”.
+        </li>
+      </ul>
+
+      <h2>Why SLang asks for its permissions</h2>
+      <ul>
+        <li>
+          <b>youtube.com:</b> to read video subtitles and show SLang’s captions on the player.
+        </li>
+        <li><b>storage:</b> to keep your settings on your computer.</li>
+        <li>
+          <b>activeTab and scripting:</b> to show captions on another site’s video, only on the tab
+          you choose, only when you click the button.
+        </li>
+        <li><b>offscreen:</b> to run translation and the voice model in the background.</li>
+      </ul>
+
+      <h2>This website and the waitlist</h2>
+      <p>
+        This site is hosted by Netlify, which keeps standard server logs. The waitlist and survey
+        use Google Forms; if you leave your email there, it’s used only to tell you about SLang, and
+        you can ask for it to be removed at any time.
+      </p>
+
+      <h2>Planned paid features</h2>
+      <p>
+        Planned Pro features such as cloud translation will need to send subtitles to a server.
+        Before they launch, this policy will be updated to say exactly what is sent, to whom, and
+        how long it is kept.
+      </p>
+
+      <h2>Children</h2>
+      <p>SLang isn’t directed at children under 13.</p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions or removal requests:
+        <a class="inline-link" data-join href="index.html#faq">use the SLang form</a> and mention
+        “privacy” in the last question.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-base mono">
+        <span>© 2026 SLang</span>
+        <a class="inline-link" href="index.html">Back to SLang home</a>
+      </div>
+    </footer>
+
+    <script>
+      for (const a of document.querySelectorAll('[data-join]')) {
+        a.href = 'https://forms.gle/CZVFfJMAEgyFLagM6';
+        a.target = '_blank';
+        a.rel = 'noopener';
+      }
+    </script>
+  </body>
+</html>
