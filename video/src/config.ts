@@ -1,95 +1,86 @@
 /**
- * Everything you're likely to tweak lives here: timing, words, captions, brand.
- * Times are in seconds; FPS converts them to frames.
+ * Everything you're likely to tweak: timing (seconds), files, words, colours.
  */
 export const FPS = 60;
 export const WIDTH = 1920;
 export const HEIGHT = 1080;
-export const DURATION_S = 17.5;
+export const DURATION_S = 23.5;
 export const f = (seconds: number) => Math.round(seconds * FPS);
 
-export const TIMELINE = {
-  // Act 1: the original English clip
-  englishStart: 0,
-  tiltStart: 4.0, // card scales down and tilts back
-  // Act 2: the globe
-  globeIn: 3.9, // globe starts fading in behind the tilting card
-  phraseDetach: 4.1, // the phrase lifts off the waveform
-  arcStart: 4.9, // trajectory starts drawing from the origin city
-  arcLand: 7.9, // phrase locks in, destination pulses (chime)
-  hudIn: 8.0,
-  // Act 3: the dubbed clip
-  dubZoom: 9.0, // camera dives toward the destination city
-  dubStart: 9.5, // dubbed clip starts playing
-  // Act 4: end card
-  endCard: 15.0,
+/** Files in video/public/. `trimStart` skips seconds at the start of a clip. */
+export const FILES = {
+  englishSource: { file: 'english_source.mp4', trimStart: 0 },
+  spanishDubbed: { file: 'spanish_dubbed.mp4', trimStart: 0 },
+  spanishSource: { file: 'spanish_source.mp4', trimStart: 0 },
+  englishCaptioned: { file: 'english_captioned.mp4', trimStart: 0 },
+  music: { file: 'bg_music.mp3', trimStart: 0 },
 } as const;
+export type ClipKey = Exclude<keyof typeof FILES, 'music'>;
 
-/** The two clips you drop into public/. Seconds to skip at the start of each. */
-export const CLIPS = {
-  english: { file: 'english_clip.mp4', trimStart: 0 },
-  dubbed: { file: 'dubbed_clip.mp4', trimStart: 0 },
-} as const;
-
-/** The phrase that flies across the globe and morphs mid-flight. */
-export const PHRASE = { from: "What's going on", to: 'Qué pasa' } as const;
-
-export const ROUTE = {
-  from: { name: 'New York', lat: 40.71, lng: -74.01, code: 'EN-US' },
-  to: { name: 'Madrid', lat: 40.42, lng: -3.7, code: 'ES-ES' },
+export const CITIES = {
+  newYork: { name: 'New York', country: 'USA', lat: 40.71, lng: -74.01 },
+  madrid: { name: 'Madrid', country: 'Spain', lat: 40.42, lng: -3.7 },
 } as const;
 
 /**
- * Captions. Replace the words and times with what's actually said in each clip
- * (times are seconds from the start of that clip, after trimStart).
- * The dubbed clip already shows SLang's captions on screen; set `show: false` if
- * these feel like too much.
+ * The timeline. Each scene shows one clip; between them the clip collapses into a dot,
+ * flies across the globe, and the destination dot expands into the next clip.
  */
-export const CAPTIONS = {
-  english: {
-    show: true,
-    words: [
-      { t: 0.2, w: "What's" },
-      { t: 0.45, w: 'going' },
-      { t: 0.7, w: 'on,' },
-      { t: 1.1, w: 'everybody?' },
-      { t: 2.0, w: 'Today' },
-      { t: 2.3, w: "we're" },
-      { t: 2.55, w: 'going' },
-      { t: 2.75, w: 'to' },
-      { t: 2.9, w: 'the' },
-      { t: 3.05, w: 'beach.' },
-    ],
-  },
-  dubbed: {
-    show: true,
-    words: [
-      { t: 0.2, w: '¿Qué' },
-      { t: 0.45, w: 'pasa,' },
-      { t: 0.8, w: 'a' },
-      { t: 0.95, w: 'todos?' },
-      { t: 1.9, w: 'Hoy' },
-      { t: 2.2, w: 'vamos' },
-      { t: 2.5, w: 'a' },
-      { t: 2.65, w: 'la' },
-      { t: 2.8, w: 'playa.' },
-    ],
-  },
+export const T = {
+  // Part 1: English → Spanish dubbing
+  englishIn: 0,
+  collapse1: 4.0, // English card shrinks to a dot on New York
+  flight1: 4.6, // dot leaves New York
+  land1: 7.0, // pings Madrid
+  expand1: 7.3, // Madrid dot grows into the dubbed clip
+  dubbedPlay: 7.5,
+  // Part 2: Spanish → English captions
+  whip: 11.5, // whip-pan to the Spanish source
+  collapse2: 15.0,
+  flight2: 15.6,
+  land2: 18.0,
+  expand2: 18.3,
+  captionedPlay: 18.5,
+  // Close
+  endCard: 22.0,
+  end: 23.5,
+} as const;
+
+/** The two flights and the label that morphs on each. */
+export const FLIGHTS = [
+  { from: CITIES.newYork, to: CITIES.madrid, start: T.flight1, land: T.land1, label: ['ENGLISH', 'ESPAÑOL'] },
+  { from: CITIES.madrid, to: CITIES.newYork, start: T.flight2, land: T.land2, label: ['ESPAÑOL', 'ENGLISH'] },
+] as const;
+
+/**
+ * Background music volume: low under speech, up during the globe flights and end card,
+ * fading out at the very end. Each [seconds, volume] pair is a keyframe; values in
+ * between are smoothly interpolated.
+ */
+export const MUSIC = {
+  speech: 0.14,
+  flight: 0.55,
+  ramp: 0.35, // seconds to move between levels
 } as const;
 
 export const COPY = {
-  sourceBadge: 'SOURCE // EN-US',
-  dubBadge: 'DUBBED // ES-ES • NATURAL VOICE',
-  hudTag: 'VOICE + CAPTIONS + WORD HINTS',
-  hudHeadline: 'Now in Español.',
-  brand: 'SLang',
-  valueProp: 'Watch in English. Learn in Spanish.',
+  badges: {
+    englishSource: 'INPUT // ENGLISH',
+    spanishDubbed: 'DUBBED // ESPAÑOL',
+    spanishSource: 'INPUT // ESPAÑOL',
+    englishCaptioned: 'CAPTIONS // ENGLISH',
+  } satisfies Record<ClipKey, string>,
+  hud1: 'MODE // AI DUBBING',
+  hud2: 'MODE // INSTANT TRANSLATED CAPTIONS',
+  brand: 'SLANG',
+  tagline: 'DUBBED OR CAPTIONED. YOU CHOOSE.',
   url: 'golden-khapse-cd903e.netlify.app',
 } as const;
 
 export const COLORS = {
   bg: '#09090B',
   surface: '#111113',
+  border: 'rgba(255,255,255,0.1)',
   line: 'rgba(255,255,255,0.08)',
   lineStrong: 'rgba(255,255,255,0.16)',
   text: '#FAFAFA',

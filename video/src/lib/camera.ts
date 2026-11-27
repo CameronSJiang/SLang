@@ -1,68 +1,55 @@
 /**
- * One continuous camera move for the globe acts. Both the WebGL scene and the HTML overlay
- * (phrase, pulses, labels) read this, so text stays locked to the 3D arc.
+ * Globe camera for both flights. The WebGL scene and the HTML overlay (dots, label, pulses)
+ * read the same function, so everything stays locked to the arcs.
  */
 import { Easing, interpolate } from 'remotion';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { HEIGHT, ROUTE, TIMELINE, WIDTH, f } from '../config';
+import { CITIES, HEIGHT, T, WIDTH, f } from '../config';
 import { toXYZ, type Vec3 } from './geo';
 
 export const FOV = 32;
 const ease = Easing.bezier(0.22, 1, 0.36, 1);
-const glide = Easing.bezier(0.65, 0, 0.35, 1);
+const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
 export interface CameraState {
   position: Vec3;
   target: Vec3;
 }
 
-/** Point the camera at lat/lng from `dist` units away from the globe centre. */
-function orbit(lat: number, lng: number, dist: number): Vec3 {
-  return toXYZ(lat, lng, dist / 100 - 1);
+const MID_LNG = (CITIES.newYork.lng + CITIES.madrid.lng) / 2;
+
+/** One flight's camera: settles in as the card collapses, drifts slowly, leans to the destination. */
+function flightCam(frame: number, collapse: number, land: number, expand: number, dir: 1 | -1) {
+  const settle = interpolate(frame, [f(collapse), f(collapse + 0.9)], [0, 1], { ...clamp, easing: ease });
+  const drift = interpolate(frame, [f(collapse), f(expand + 0.8)], [-9 * dir, 7 * dir], clamp);
+  const lean = interpolate(frame, [f(land - 0.4), f(expand + 0.6)], [0, 1], { ...clamp, easing: ease });
+  const lat = interpolate(settle, [0, 1], [30, 37]);
+  const lng = MID_LNG + drift + lean * 10 * dir;
+  const dist = interpolate(settle, [0, 1], [470, 380]) - lean * 40;
+  return { lat, lng, dist };
 }
 
 export function cameraAt(frame: number): CameraState {
-  const T = TIMELINE;
-  // Act 2: glide in from far away, centred between the two cities, with a slow drift.
-  const inP = interpolate(frame, [f(T.globeIn), f(T.arcStart + 0.6)], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: ease,
-  });
-  const midLng = (ROUTE.from.lng + ROUTE.to.lng) / 2;
-  const drift = interpolate(frame, [f(T.globeIn), f(T.dubZoom)], [-14, 4], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  let lat = interpolate(inP, [0, 1], [18, 36]);
-  let lng = midLng + drift;
-  let dist = interpolate(inP, [0, 1], [1150, 380]);
-  let target: Vec3 = [0, 0, 0];
-
-  // Act 3: dive toward the destination city.
-  const dive = interpolate(frame, [f(T.dubZoom), f(T.dubStart + 0.7)], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: glide,
-  });
-  if (dive > 0) {
-    lat = interpolate(dive, [0, 1], [lat, ROUTE.to.lat]);
-    lng = interpolate(dive, [0, 1], [lng, ROUTE.to.lng]);
-    dist = interpolate(dive, [0, 1], [dist, 118]);
-    const dest = toXYZ(ROUTE.to.lat, ROUTE.to.lng);
-    target = [dest[0] * dive, dest[1] * dive, dest[2] * dive];
-  }
-  return { position: orbit(lat, lng, dist), target };
+  const second = frame >= f((T.expand1 + T.collapse2) / 2);
+  const c = second
+    ? flightCam(frame, T.collapse2, T.land2, T.expand2, -1)
+    : flightCam(frame, T.collapse1, T.land1, T.expand1, 1);
+  return { position: toXYZ(c.lat, c.lng, c.dist / 100 - 1), target: [0, 0, 0] };
 }
 
 const scratch = new PerspectiveCamera(FOV, WIDTH / HEIGHT, 1, 5000);
 const v = new Vector3();
 
-/** Screen position (px) of a world point for the camera at `frame`. */
-export function project(p: Vec3, cam: CameraState): { x: number; y: number; behind: boolean } {
+/** Screen position (px) of a world point. */
+export function project(p: Vec3, cam: CameraState): { x: number; y: number } {
   scratch.position.set(...cam.position);
   scratch.lookAt(...cam.target);
   scratch.updateMatrixWorld();
   v.set(...p).project(scratch);
-  return { x: ((v.x + 1) / 2) * WIDTH, y: ((1 - v.y) / 2) * HEIGHT, behind: v.z > 1 };
+  return { x: ((v.x + 1) / 2) * WIDTH, y: ((1 - v.y) / 2) * HEIGHT };
+}
+
+/** Screen position of a city at `frame`. */
+export function cityOnScreen(city: { lat: number; lng: number }, frame: number) {
+  return project(toXYZ(city.lat, city.lng, 0.004), cameraAt(frame));
 }

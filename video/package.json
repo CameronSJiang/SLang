@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render SLangLaunch out/slang-launch.mp4",
+    "render": "remotion render SLangCommercial out/slang-commercial.mp4",
     "sfx": "node scripts/make-sfx.mjs",
     "typecheck": "tsc --noEmit"
   },
@@ -12,7 +12,7 @@
     "@react-three/fiber": "9.8.2",
     "@remotion/cli": "4.0.542",
     "@remotion/fonts": "4.0.542",
-    "@remotion/media-utils": "4.0.542",
+    "@remotion/media": "4.0.542",
     "@remotion/three": "4.0.542",
     "react": "19.2.9",
     "react-dom": "19.2.9",

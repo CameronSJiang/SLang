@@ -1,59 +1,60 @@
-# SLang launch film (Remotion)
+# SLang commercial (Remotion)
 
-A 17.5-second, 1920×1080, 60 fps launch video: your English clip → a 3D globe where the
-phrase flies New York → Madrid and translates letter by letter → your dubbed clip → end card.
+A 23.5-second, 1920×1080, 60 fps commercial showing both directions:
 
-## 1. Add your two clips
-Put them in `video/public/` with exactly these names:
+| Time | What happens |
+|---|---|
+| 0–4 s | `english_source.mp4` in a hairline frame · `INPUT // ENGLISH` |
+| 4–7.5 s | the card collapses into a glowing dot on New York and flies to Madrid; the pill morphs `ENGLISH → ESPAÑOL`; landing flashes `MODE // AI DUBBING` |
+| 7.5–11.5 s | the Madrid dot expands into `spanish_dubbed.mp4` · `DUBBED // ESPAÑOL` |
+| 11.5–15 s | whip-pan to `spanish_source.mp4` · `INPUT // ESPAÑOL` |
+| 15–18.5 s | collapses into Madrid, flies back to New York, `ESPAÑOL → ENGLISH`, `MODE // INSTANT TRANSLATED CAPTIONS` |
+| 18.5–22 s | the New York dot expands into `english_captioned.mp4` · `CAPTIONS // ENGLISH` |
+| 22–23.5 s | end slate: SLANG · tagline · URL |
 
-| File | What | Length used |
-|---|---|---|
-| `english_clip.mp4` | the original English video (OBS recording) | first 5 s |
-| `dubbed_clip.mp4` | the same moment with SLang's Spanish dub and captions | first 5.8 s |
+`bg_music.mp3` plays throughout: 14% under speech, 55% during flights and the end card, fading
+to silence at the end. Soft whooshes and chimes are synthesized (`public/sfx`, `pnpm sfx`).
 
-Until they're there, the film shows labelled placeholders so you can preview the motion.
-Use MP4 (OBS: Settings → Output → Recording Format → mp4). To start a clip later, set
-`trimStart` (seconds) in `src/config.ts`.
+## 1. Add the five files to `video/public/`
 
-## 2. Match the captions to what's said
-Open `src/config.ts` → `CAPTIONS`. Replace the sample words and times (seconds from the start of
-each clip) with what's actually said. If the dubbed clip already shows SLang's own captions and
-two caption lines feel like too much, set `dubbed.show: false`.
+| File | What to record |
+|---|---|
+| `english_source.mp4` | ~4 s of someone speaking English, medium close-up |
+| `spanish_dubbed.mp4` | the same clip with SLang's Spanish dub (Dub mode), ~4.5 s |
+| `spanish_source.mp4` | ~4 s of someone speaking Spanish |
+| `english_captioned.mp4` | the same Spanish clip with SLang showing English captions, ~4.5 s |
+| `bg_music.mp3` | an instrumental track licensed for commercial use |
 
-Also in `config.ts`: all timings (`TIMELINE`), the flying phrase (`PHRASE`), the two cities
-(`ROUTE`), and every piece of on-screen text (`COPY`).
+Missing files show labelled placeholders, so you can preview the motion any time. Use footage
+you have the rights to: yourself, friends, or Creative Commons **CC BY** videos (not "NC" or "ND",
+which forbid ads and dubbed versions). To skip the start of a clip, set `trimStart` in
+`src/config.ts`.
 
-## 3. Preview and export
-In Terminal, from the SLang folder:
+## 2. Preview and export
+From the SLang folder:
 
 ```
 cd video
 pnpm install
-pnpm studio
+pnpm studio      # preview in the browser (space = play)
+pnpm render      # → video/out/slang-commercial.mp4
 ```
 
-The studio opens in your browser: press space to play, drag the timeline to scrub.
+(`npx remotion studio` and `npx remotion render SLangCommercial out/slang-commercial.mp4` do the
+same thing if your npm works.)
 
-Export the final MP4 (H.264, high quality, with audio):
+## 3. Tweak
+`src/config.ts` holds every timing (`T`), the cities, the flight labels, the badges and callouts
+(`COPY`), and the music levels (`MUSIC`).
 
-```
-pnpm render
-```
+## Files
+- `src/Commercial.tsx`: scenes, whip-pan, end slate, music ducking and sound cues.
+- `src/components/MorphCard.tsx`: the clip frame that collapses into a dot and grows out of one.
+- `src/components/Globe3D.tsx`: WebGL globe (`@remotion/three`, NASA night-lights texture),
+  arcs drawn during each flight and dissolved after landing.
+- `src/components/FlightOverlay.tsx`: flying dot, morphing language pill, city labels, pulses,
+  `MODE //` callouts.
+- `src/lib/`: camera path, globe geometry, letter-by-letter morph.
+- Fonts (Geist, JetBrains Mono) are bundled in `public/fonts` (SIL Open Font License).
 
-The file appears at `video/out/slang-launch.mp4`. (Same as `npx remotion studio` /
-`npx remotion render SLangLaunch out/slang-launch.mp4` if your npm works.)
-
-## What's inside
-- `src/Launch.tsx`: the four acts and the audio mix, as one continuous timeline.
-- `src/components/Globe3D.tsx`: the WebGL globe (`@remotion/three`): NASA night-lights Earth,
-  thin atmosphere, the arc drawing itself as the phrase flies.
-- `src/components/GlobeOverlay.tsx`: the phrase label, city labels and pulse rings, projected
-  from the same camera so they stay on the arc.
-- `src/components/ClipCard.tsx`: the framed clips with badge, live waveform (from the clip's
-  real audio) and word-by-word captions.
-- `src/lib/morph.ts`: the letter-by-letter translation (same as the website).
-- `scripts/make-sfx.mjs`: synthesizes `public/sfx/whoosh.wav` and `chime.wav` (`pnpm sfx`).
-- Fonts (Geist, JetBrains Mono) are bundled in `public/fonts` under the SIL Open Font License.
-
-Remotion is free for individuals and companies of up to three people; check
-remotion.dev/license if SLang grows past that.
+Remotion is free for individuals and companies of up to three people (remotion.dev/license).

@@ -13,18 +13,23 @@ import {
   TubeGeometry,
   Vector3,
 } from 'three';
-import { COLORS, HEIGHT, ROUTE, TIMELINE, WIDTH, f } from '../config';
+import { CITIES, COLORS, FLIGHTS, HEIGHT, WIDTH, f } from '../config';
 import { FOV, cameraAt } from '../lib/camera';
-import { GLOBE_R, arcCurve, toXYZ } from '../lib/geo';
+import { GLOBE_R, arcCurve, toXYZ, type Vec3 } from '../lib/geo';
 
-const curve = arcCurve(ROUTE.from, ROUTE.to);
+const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
+export const flightCurves = FLIGHTS.map((fl) => arcCurve(fl.from, fl.to));
+const TRAIL_FADE_S = 0.9;
 
-/** Arc progress 0..1 for a frame (draw-on while the phrase flies). */
-export function arcProgress(frame: number): number {
-  return interpolate(frame, [f(TIMELINE.arcStart), f(TIMELINE.arcLand)], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+/** Where the trail of flight i is drawn this frame: [t0, t1] along the arc, and opacity. */
+export function trailState(i: number, frame: number): { t0: number; t1: number; alpha: number } | null {
+  const fl = FLIGHTS[i];
+  if (!fl) return null;
+  const t1 = interpolate(frame, [f(fl.start), f(fl.land)], [0, 1], clamp);
+  if (t1 <= 0) return null;
+  const k = interpolate(frame, [f(fl.land), f(fl.land + TRAIL_FADE_S)], [0, 1], clamp);
+  if (k >= 1) return null;
+  return { t0: k * k, t1, alpha: 1 - k };
 }
 
 function CameraRig() {
@@ -79,18 +84,18 @@ const atmosphereShader = {
     }`,
 };
 
-function Arc({ progress, fade }: { progress: number; fade: number }) {
+function Trail({ curve, t0, t1, alpha }: { curve: (t: number) => Vec3; t0: number; t1: number; alpha: number }) {
   const geos = useMemo(() => {
-    if (progress <= 0.002) return null;
-    const n = Math.max(4, Math.ceil(80 * progress));
+    if (t1 - t0 < 0.003) return null;
+    const n = Math.max(4, Math.ceil(80 * (t1 - t0)));
     const pts: Vector3[] = [];
-    for (let i = 0; i <= n; i++) pts.push(new Vector3(...curve((progress * i) / n)));
+    for (let i = 0; i <= n; i++) pts.push(new Vector3(...curve(t0 + ((t1 - t0) * i) / n)));
     const path = new CatmullRomCurve3(pts);
     return {
       core: new TubeGeometry(path, n * 2, 0.32, 8, false),
-      glow: new TubeGeometry(path, n * 2, 1.1, 8, false),
+      glow: new TubeGeometry(path, n * 2, 1.15, 8, false),
     };
-  }, [progress]);
+  }, [curve, t0, t1]);
   useEffect(
     () => () => {
       geos?.core.dispose();
@@ -102,26 +107,19 @@ function Arc({ progress, fade }: { progress: number; fade: number }) {
   return (
     <group>
       <mesh geometry={geos.glow}>
-        <meshBasicMaterial
-          color={COLORS.accent}
-          transparent
-          opacity={0.16 * fade}
-          blending={AdditiveBlending}
-          depthWrite={false}
-        />
+        <meshBasicMaterial color={COLORS.accent} transparent opacity={0.17 * alpha} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh geometry={geos.core}>
-        <meshBasicMaterial color={COLORS.accent} transparent opacity={0.95 * fade} />
+        <meshBasicMaterial color={COLORS.accent} transparent opacity={0.95 * alpha} />
       </mesh>
     </group>
   );
 }
 
 function City({ lat, lng }: { lat: number; lng: number }) {
-  const p = toXYZ(lat, lng, 0.004);
   return (
-    <mesh position={p}>
-      <sphereGeometry args={[0.85, 16, 16]} />
+    <mesh position={toXYZ(lat, lng, 0.004)}>
+      <sphereGeometry args={[0.8, 16, 16]} />
       <meshBasicMaterial color={COLORS.accent} />
     </mesh>
   );
@@ -130,13 +128,6 @@ function City({ lat, lng }: { lat: number; lng: number }) {
 export function Globe3D({ opacity }: { opacity: number }) {
   const frame = useCurrentFrame();
   const tex = useEarthTexture();
-  const progress = arcProgress(frame);
-  // After the dive starts, the trail dissolves so the dubbed clip takes over cleanly.
-  const trailFade = interpolate(frame, [f(TIMELINE.dubZoom), f(TIMELINE.dubZoom + 0.6)], [1, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
   return (
     <div style={{ position: 'absolute', inset: 0, opacity }}>
       <ThreeCanvas width={WIDTH} height={HEIGHT} camera={{ fov: FOV, near: 1, far: 5000 }} gl={{ antialias: true, alpha: true }}>
@@ -145,34 +136,22 @@ export function Globe3D({ opacity }: { opacity: number }) {
         <mesh rotation={[0, -Math.PI / 2, 0]}>
           <sphereGeometry args={[GLOBE_R, 96, 64]} />
           {tex ? (
-            <meshStandardMaterial
-              color="#0b0f1a"
-              emissive="#ffffff"
-              emissiveMap={tex}
-              emissiveIntensity={1.25}
-              roughness={1}
-              metalness={0}
-            />
+            <meshStandardMaterial color="#0b0f1a" emissive="#ffffff" emissiveMap={tex} emissiveIntensity={1.25} roughness={1} metalness={0} />
           ) : (
             <meshBasicMaterial color="#0b0f1a" />
           )}
         </mesh>
         <mesh scale={1.06}>
           <sphereGeometry args={[GLOBE_R, 64, 48]} />
-          <shaderMaterial
-            args={[atmosphereShader]}
-            side={BackSide}
-            transparent
-            blending={AdditiveBlending}
-            depthWrite={false}
-          />
+          <shaderMaterial args={[atmosphereShader]} side={BackSide} transparent blending={AdditiveBlending} depthWrite={false} />
         </mesh>
-        <City lat={ROUTE.from.lat} lng={ROUTE.from.lng} />
-        <City lat={ROUTE.to.lat} lng={ROUTE.to.lng} />
-        <Arc progress={progress} fade={trailFade} />
+        <City {...CITIES.newYork} />
+        <City {...CITIES.madrid} />
+        {flightCurves.map((curve, i) => {
+          const s = trailState(i, frame);
+          return s ? <Trail key={i} curve={curve} {...s} /> : null;
+        })}
       </ThreeCanvas>
     </div>
   );
 }
-
-export { curve as routeCurve };

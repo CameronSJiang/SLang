@@ -3,3 +3,4 @@ out/
 .DS_Store
 public/*.mp4
 package-lock.json
+public/*.mp3
