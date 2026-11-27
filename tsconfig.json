@@ -6,5 +6,10 @@
     "noImplicitOverride": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
-  }
+  },
+  "exclude": [
+    "**/node_modules",
+    ".output",
+    "video"
+  ]
 }

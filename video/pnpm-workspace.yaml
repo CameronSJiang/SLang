@@ -1,0 +1,5 @@
+# Its own pnpm project (separate from the extension in the parent folder).
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild
