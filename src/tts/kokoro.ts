@@ -37,15 +37,43 @@ export const kokoroThreads = (): number => env.backends.onnx.wasm?.numThreads ??
 
 type Progress = (fraction: number) => void;
 
+/** Where the model runs: CPU (WebAssembly, 8-bit, ~90 MB) or the graphics chip (WebGPU, 32-bit, ~310 MB). */
+export type KokoroDevice = 'wasm' | 'webgpu';
+interface GpuNavigator {
+  gpu?: { requestAdapter(): Promise<unknown> };
+}
+
+/**
+ * True if a usable graphics adapter exists. Checked before trying WebGPU: a failed WebGPU
+ * start leaves the ONNX runtime unable to fall back to the CPU until the document reloads.
+ */
+export async function webgpuUsable(): Promise<boolean> {
+  const gpu = (globalThis.navigator as GpuNavigator | undefined)?.gpu;
+  if (!gpu) return false;
+  try {
+    return !!(await gpu.requestAdapter());
+  } catch {
+    return false;
+  }
+}
+
 let loading: Promise<{
   model: StyleTextToSpeech2Model;
   tokenizer: Awaited<ReturnType<typeof AutoTokenizer.from_pretrained>>;
 }> | null = null;
+let loadingDevice: KokoroDevice | null = null;
 const voices = new Map<string, Promise<Float32Array>>();
 
-/** Load (downloading the first time) the model and tokenizer. */
-export function loadKokoro(onProgress?: Progress) {
+/** Load (downloading the first time) the model and tokenizer, on `device`. */
+export function loadKokoro(onProgress?: Progress, device: KokoroDevice = 'wasm') {
+  if (loading && loadingDevice !== device) {
+    // Switching devices: free the old model.
+    const old = loading;
+    loading = null;
+    void old.then(({ model }) => model.dispose()).catch(() => {});
+  }
   if (!loading) {
+    loadingDevice = device;
     const files = new Map<string, { loaded: number; total: number }>();
     const progress_callback = (p: {
       status: string;
@@ -65,13 +93,17 @@ export function loadKokoro(onProgress?: Progress) {
     };
     loading = Promise.all([
       StyleTextToSpeech2Model.from_pretrained(KOKORO_MODEL, {
-        dtype: 'q8',
-        device: 'wasm',
+        // 8-bit weights run well on the CPU; the graphics chip needs full precision.
+        dtype: device === 'webgpu' ? 'fp32' : 'q8',
+        device,
         progress_callback,
       }),
       AutoTokenizer.from_pretrained(KOKORO_MODEL, { progress_callback }),
     ]).then(([model, tokenizer]) => ({ model, tokenizer }));
-    loading.catch(() => (loading = null));
+    loading.catch(() => {
+      loading = null;
+      loadingDevice = null;
+    });
   }
   return loading;
 }
@@ -101,9 +133,9 @@ export interface Clip {
   seconds: number;
 }
 
-/** Speak `text` (Spanish) with a Kokoro voice. */
+/** Speak `text` (Spanish) with a Kokoro voice, on whichever device the model was loaded. */
 export async function synthesize(text: string, voice: KokoroVoice, speed = 1): Promise<Clip> {
-  const { model, tokenizer } = await loadKokoro();
+  const { model, tokenizer } = await (loading ?? loadKokoro());
   const phonemes = phonemizeSpanish(text, 'es');
   const { input_ids } = tokenizer(phonemes, { truncation: true }) as { input_ids: Tensor };
   const n = Math.min(Math.max((input_ids.dims.at(-1) ?? 2) - 2, 0), 509);

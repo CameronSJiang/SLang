@@ -155,7 +155,9 @@ export class ChromeAIProvider implements LLMProvider {
     // Language-specific checks happen per call; this only says the API exists and a model is ready.
     return (
       !!ai.LanguageModel &&
-      (await ai.LanguageModel.availability().catch(() => 'unavailable')) === 'available'
+      (await ai.LanguageModel.availability({
+        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+      }).catch(() => 'unavailable')) === 'available'
     );
   }
 

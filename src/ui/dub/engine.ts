@@ -25,7 +25,8 @@ const LEAD_S = 0.1;
 /** Never give a line less than this to fit into (seconds). */
 const MIN_SLOT_S = 0.5;
 
-export type DubIssue = 'no-voice' | 'blocked' | 'preparing';
+/** `fallback`: the natural voice was behind, so a line used the system voice instead. */
+export type DubIssue = 'no-voice' | 'blocked' | 'preparing' | 'fallback';
 
 export interface Utterance {
   stop(): void;
@@ -99,6 +100,11 @@ export interface DubEngineOptions {
   voiceURI: string | null;
   /** Defaults to SystemSpeaker(lang, voiceURI). */
   speaker?: Speaker;
+  /**
+   * Says a line when `speaker` hasn't prepared it in time, so the video never has to wait
+   * for audio (typically the system voice behind a slower natural voice).
+   */
+  fallback?: Speaker;
   /** For tests/diagnostics: a line started (rate = speech rate used). */
   onSpeak?(cue: Cue, rate: number): void;
   onIssue?(issue: DubIssue | null): void;
@@ -236,14 +242,24 @@ export class DubEngine {
     const until = slotEnd(this.cues, this.cues.indexOf(cue));
     const seconds = Math.max(MIN_SLOT_S, until - Math.max(v.currentTime, cue.start)) / videoRate;
     let mine: Utterance | null = null;
-    const r = this.speaker.say(cue, seconds, videoRate, () => {
+    const onEnd = () => {
       if (this.current !== mine) return; // cancelled
       this.current = null;
       this.next();
-    });
+    };
+    let r = this.speaker.say(cue, seconds, videoRate, onEnd);
     if (r === 'no-voice') {
       this.o.onIssue?.('no-voice');
       return;
+    }
+    if (r === 'not-ready' && this.o.fallback) {
+      // Don't make the video wait: say this one with the fallback voice. The main speaker
+      // keeps preparing and takes over again as soon as it's ahead.
+      const fb = this.o.fallback.say(cue, seconds, videoRate, onEnd);
+      if (fb !== 'not-ready' && fb !== 'no-voice') {
+        r = fb;
+        this.o.onIssue?.('fallback');
+      }
     }
     if (r === 'not-ready') {
       // Audio still generating: hold the video until it's ready (or give up on this line).

@@ -11,7 +11,7 @@ import { speak } from '../tts';
 export interface SayOptions {
   lang: string;
   /** Kokoro voice to prefer (only used if the model is already downloaded). */
-  natural?: { voice: string; speed: number } | null;
+  natural?: { voice: string; speed: number; gpu?: boolean } | null;
   onStart?(): void;
   onEnd?(): void;
 }
@@ -52,7 +52,7 @@ export function sayWord(text: string, o: SayOptions): SayHandle {
     if (o.natural && kokoroSupports(o.lang)) {
       try {
         if ((await ttsStatus()).loaded) {
-          const clip = await ttsSpeak(text, o.natural.voice, o.natural.speed);
+          const clip = await ttsSpeak(text, o.natural.voice, o.natural.speed, o.natural.gpu);
           if (done) return;
           url = URL.createObjectURL(new Blob([fromBase64(clip.wav)], { type: 'audio/wav' }));
           audio = new Audio(url);

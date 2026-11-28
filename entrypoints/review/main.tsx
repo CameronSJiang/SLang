@@ -67,7 +67,10 @@ function Quiz({ s, onFinished }: { s: Settings; onFinished(): void }) {
     saying.current?.stop();
     saying.current = sayWord(text, {
       lang: s.targetLang,
-      natural: s.dubEngine === 'natural' ? { voice: s.kokoroVoice, speed: s.kokoroSpeed } : null,
+      natural:
+        s.dubEngine === 'natural'
+          ? { voice: s.kokoroVoice, speed: s.kokoroSpeed, gpu: s.kokoroGpu }
+          : null,
       onStart: () => setMood('talk'),
       onEnd: () => setMood((m) => (m === 'talk' ? 'idle' : m)),
     });

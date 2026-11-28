@@ -28,6 +28,7 @@ export class KokoroSpeaker implements Speaker {
     private readonly voice: string,
     private readonly speed: number,
     private readonly onIssue?: (i: DubIssue | null) => void,
+    private readonly gpu = false,
   ) {}
 
   private key = (cue: Cue) => `${cue.start}|${cue.text}`;
@@ -36,7 +37,7 @@ export class KokoroSpeaker implements Speaker {
     const k = this.key(cue);
     let p = this.clips.get(k);
     if (!p) {
-      p = ttsSpeak(cue.text, this.voice, this.speed).then((clip) => {
+      p = ttsSpeak(cue.text, this.voice, this.speed, this.gpu).then((clip) => {
         const blob = new Blob([fromBase64(clip.wav)], { type: 'audio/wav' });
         const r = { url: URL.createObjectURL(blob), seconds: clip.seconds };
         this.done.set(k, r);

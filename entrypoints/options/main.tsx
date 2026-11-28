@@ -229,7 +229,7 @@ function Options() {
                     lang: s.targetLang,
                     natural:
                       s.dubEngine === 'natural'
-                        ? { voice: s.kokoroVoice, speed: s.kokoroSpeed }
+                        ? { voice: s.kokoroVoice, speed: s.kokoroSpeed, gpu: s.kokoroGpu }
                         : null,
                     onStart: () => setDracoMood('talk'),
                     onEnd: () => setDracoMood('idle'),

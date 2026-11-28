@@ -31,6 +31,7 @@ describe('normalizeSettings', () => {
       dubEngine: 'natural',
       kokoroVoice: 'em_alex',
       kokoroSpeed: 1.2,
+      kokoroGpu: true,
       buddyEnabled: false,
     });
     expect(s).toEqual({
@@ -51,6 +52,7 @@ describe('normalizeSettings', () => {
       dubEngine: 'natural',
       kokoroVoice: 'em_alex',
       kokoroSpeed: 1.2,
+      kokoroGpu: true,
       buddyEnabled: false,
     });
   });

@@ -11,7 +11,7 @@ import { requestAnnotation, requestTranslation, type AnnotationClient } from '@/
 import type { TranslationProgress } from '@/src/llm/translationJob';
 import { LexiconClient } from '@/src/storage/lexClient';
 import { extensionAlive, loadSettings, saveSettings, watchSettings } from '@/src/storage/settings';
-import { DubEngine, type DubIssue } from '@/src/ui/dub/engine';
+import { DubEngine, SystemSpeaker, type DubIssue } from '@/src/ui/dub/engine';
 import { KokoroSpeaker } from '@/src/ui/dub/kokoroSpeaker';
 import { kokoroSupports } from '@/src/tts/voices';
 import { mountOverlay, type OverlayHandle } from '@/src/ui/overlay/mount';
@@ -40,6 +40,9 @@ interface DubTrack {
 }
 
 // ISOLATED world: owns the overlay. Captions arrive from youtube-main.content via postMessage.
+/** How long the "natural voice is catching up" note stays after the last fallback line. */
+const FALLBACK_NOTE_MS = 8000;
+
 export default defineContentScript({
   matches: ['*://*.youtube.com/*'],
   async main(ctx) {
@@ -66,6 +69,7 @@ export default defineContentScript({
         settings.dubVoice,
         settings.kokoroVoice,
         settings.kokoroSpeed,
+        settings.kokoroGpu,
       ]);
     let dubIssue: DubIssue | null = null;
     let lastSpoken = '';
@@ -129,6 +133,12 @@ export default defineContentScript({
         out.push('Click the video once so SLang can speak.');
       if (pb.audio === 'dub' && dubIssue === 'preparing') {
         out.push('Getting the voice ready… (the first time it downloads, about a minute)');
+      }
+      if (pb.audio === 'dub' && dubIssue === 'fallback') {
+        out.push(
+          'The natural voice is catching up, so some lines use your computer’s voice. ' +
+            'For a faster natural voice, try “Use the graphics chip” in SLang settings.',
+        );
       }
       return out;
     };
@@ -195,7 +205,11 @@ export default defineContentScript({
             lang,
             natural:
               settings.dubEngine === 'natural'
-                ? { voice: settings.kokoroVoice, speed: settings.kokoroSpeed }
+                ? {
+                    voice: settings.kokoroVoice,
+                    speed: settings.kokoroSpeed,
+                    gpu: settings.kokoroGpu,
+                  }
                 : null,
             ...on,
           }),
@@ -314,7 +328,24 @@ export default defineContentScript({
         return;
       }
       if (!engine) {
+        let fallbackAt = 0;
         const onIssue = (issue: DubIssue | null) => {
+          // Keep the "catching up" note up for a while instead of flickering line by line.
+          if (issue === 'fallback') {
+            fallbackAt = Date.now();
+            setTimeout(() => {
+              if (dubIssue === 'fallback' && Date.now() - fallbackAt >= FALLBACK_NOTE_MS) {
+                dubIssue = null;
+                draw();
+              }
+            }, FALLBACK_NOTE_MS);
+          } else if (
+            issue === null &&
+            dubIssue === 'fallback' &&
+            Date.now() - fallbackAt < FALLBACK_NOTE_MS
+          ) {
+            return;
+          }
           if (issue === dubIssue) return;
           dubIssue = issue;
           draw();
@@ -328,7 +359,19 @@ export default defineContentScript({
             lang: settings.targetLang,
             voiceURI: settings.dubVoice,
             ...(natural
-              ? { speaker: new KokoroSpeaker(settings.kokoroVoice, settings.kokoroSpeed, onIssue) }
+              ? {
+                  speaker: new KokoroSpeaker(
+                    settings.kokoroVoice,
+                    settings.kokoroSpeed,
+                    onIssue,
+                    settings.kokoroGpu,
+                  ),
+                  // When the natural voice falls behind, the system voice covers so the video
+                  // keeps playing. (It only reports "blocked"; the engine reports "fallback".)
+                  fallback: new SystemSpeaker(settings.targetLang, settings.dubVoice, (i) => {
+                    if (i === 'blocked') onIssue(i);
+                  }),
+                }
               : {}),
             onSpeak: (cue, rate) => {
               lastSpoken = `${cue.id}@${rate.toFixed(2)}`;

@@ -3,28 +3,65 @@ import { browser } from 'wxt/browser';
 import { ChromeAIProvider } from '@/src/llm/chromeAI';
 import type { OffscreenRequest, OffscreenResponse } from '@/src/llm/messages';
 import { InvalidResponseError, ProviderUnavailableError } from '@/src/llm/types';
-import { kokoroThreads, loadKokoro, synthesize, type KokoroVoice } from '@/src/tts/kokoro';
+import {
+  kokoroThreads,
+  loadKokoro,
+  synthesize,
+  webgpuUsable,
+  type KokoroDevice,
+  type KokoroVoice,
+} from '@/src/tts/kokoro';
 import { toBase64, type TtsProgressEvent, type TtsStatus } from '@/src/tts/messages';
 
 let ttsState: TtsStatus = { loaded: false, loading: false };
+/** The graphics chip failed once in this session: don't keep retrying it. */
+let gpuBroken = false;
+let gpuUnavailable = '';
 
-function loadTts(): Promise<unknown> {
-  if (ttsState.loaded) return Promise.resolve();
+const progress = (fraction: number) => {
+  const e: TtsProgressEvent = { type: 'slang-tts-progress', fraction };
+  void browser.runtime.sendMessage(e).catch(() => {});
+};
+
+/**
+ * Load the voice model on the device the caller asked for (graphics chip falls back to CPU).
+ * The setting comes with each request: offscreen documents can't read extension storage.
+ */
+async function loadTts(wantGpu: boolean): Promise<unknown> {
+  let device: KokoroDevice = 'wasm';
+  if (wantGpu && !gpuBroken) {
+    if (await webgpuUsable()) device = 'webgpu';
+    else gpuUnavailable = 'no usable graphics chip found';
+  }
+  if (ttsState.loaded && ttsState.device === device) return;
   ttsState = { loaded: false, loading: true };
-  return loadKokoro((fraction) => {
-    const e: TtsProgressEvent = { type: 'slang-tts-progress', fraction };
-    void browser.runtime.sendMessage(e).catch(() => {});
-  }).then(
-    () => (ttsState = { loaded: true, loading: false }),
-    (e: unknown) => {
-      ttsState = {
-        loaded: false,
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      };
-      throw e;
-    },
-  );
+  try {
+    await loadKokoro(progress, device);
+    ttsState = {
+      loaded: true,
+      loading: false,
+      device,
+      ...(wantGpu && device === 'wasm' && gpuUnavailable ? { gpuError: gpuUnavailable } : {}),
+    };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    if (device === 'webgpu') {
+      // The graphics chip didn't work out: use the CPU instead, and say why.
+      await loadKokoro(progress, 'wasm').catch((e2: unknown) => {
+        ttsState = {
+          loaded: false,
+          loading: false,
+          error: e2 instanceof Error ? e2.message : String(e2),
+        };
+        throw e2;
+      });
+      ttsState = { loaded: true, loading: false, device: 'wasm', gpuError: error };
+      gpuBroken = true;
+      return;
+    }
+    ttsState = { loaded: false, loading: false, error };
+    throw e;
+  }
 }
 
 const provider = new ChromeAIProvider();
@@ -42,11 +79,22 @@ async function handle(req: OffscreenRequest): Promise<unknown> {
     case 'tts.status':
       return { ...ttsState, threads: kokoroThreads() };
     case 'tts.load':
-      await loadTts();
+      await loadTts(!!req.gpu);
       return ttsState;
     case 'tts.speak': {
-      await loadTts();
-      const clip = await synthesize(req.text, req.voice as KokoroVoice, req.speed);
+      await loadTts(!!req.gpu);
+      let clip;
+      try {
+        clip = await synthesize(req.text, req.voice as KokoroVoice, req.speed);
+      } catch (e) {
+        if (ttsState.device !== 'webgpu') throw e;
+        // The graphics chip loaded but can't run it: switch to the CPU for good and retry.
+        const gpuError = e instanceof Error ? e.message : String(e);
+        await loadKokoro(progress, 'wasm');
+        ttsState = { loaded: true, loading: false, device: 'wasm', gpuError };
+        gpuBroken = true;
+        clip = await synthesize(req.text, req.voice as KokoroVoice, req.speed);
+      }
       return { wav: toBase64(clip.wav), seconds: clip.seconds };
     }
   }

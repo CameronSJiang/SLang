@@ -11,6 +11,7 @@ async function ask<T>(req: TtsRequest): Promise<T> {
 }
 
 export const ttsStatus = () => ask<TtsStatus>({ op: 'tts.status' });
-export const ttsLoad = () => ask<TtsStatus>({ op: 'tts.load' });
-export const ttsSpeak = (text: string, voice: string, speed = 1) =>
-  ask<TtsClipMessage>({ op: 'tts.speak', text, voice, speed });
+/** `gpu`: run the voice on the graphics chip (falls back to the CPU if it can't). */
+export const ttsLoad = (gpu = false) => ask<TtsStatus>({ op: 'tts.load', gpu });
+export const ttsSpeak = (text: string, voice: string, speed = 1, gpu = false) =>
+  ask<TtsClipMessage>({ op: 'tts.speak', text, voice, speed, gpu });

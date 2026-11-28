@@ -4,7 +4,11 @@ import { KOKORO_SPEED_RANGE, type Settings } from '@/src/core/settings';
 import { ttsLoad, ttsSpeak, ttsStatus } from '@/src/tts/client';
 import { fromBase64, type TtsProgressEvent, type TtsStatus } from '@/src/tts/messages';
 import { KOKORO_DOWNLOAD_MB, KOKORO_VOICES } from '@/src/tts/voices';
-import { Segmented } from './kit';
+import { Segmented, Toggle } from './kit';
+
+/** Full-precision model the graphics chip needs. */
+const GPU_DOWNLOAD_MB = 325;
+const hasWebGPU = typeof navigator !== 'undefined' && 'gpu' in navigator;
 
 const SAMPLE = '¡Hola! Hoy vamos a aprender algo nuevo. ¿Estás listo? ¡Vamos!';
 
@@ -14,6 +18,10 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
   const [progress, setProgress] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [warm, setWarm] = useState(false);
+  const wantDevice = s.kokoroGpu && hasWebGPU ? 'webgpu' : 'wasm';
+  // Ready on the wanted device, or on the CPU after the graphics chip didn't work out.
+  const ready = !!status?.loaded && ((status.device ?? 'wasm') === wantDevice || !!status.gpuError);
 
   useEffect(() => {
     void ttsStatus().then(setStatus, () => setStatus({ loaded: false, loading: false }));
@@ -31,18 +39,39 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
     setBusy(true);
     setNote('');
     try {
-      if (!status?.loaded) setStatus(await ttsLoad());
+      let st = status;
+      if (!ready) {
+        st = await ttsLoad(s.kokoroGpu);
+        setStatus(st);
+        setWarm(false);
+      }
+      // The first run after loading compiles the model (slow, especially on the graphics
+      // chip), so time a second run for an honest speed.
+      if (!warm) {
+        await ttsSpeak('Hola.', s.kokoroVoice, s.kokoroSpeed, s.kokoroGpu);
+        setWarm(true);
+      }
       const t0 = performance.now();
-      const clip = await ttsSpeak(SAMPLE, s.kokoroVoice, s.kokoroSpeed);
+      const clip = await ttsSpeak(SAMPLE, s.kokoroVoice, s.kokoroSpeed, s.kokoroGpu);
       const took = (performance.now() - t0) / 1000;
       const url = URL.createObjectURL(new Blob([fromBase64(clip.wav)], { type: 'audio/wav' }));
       await new Audio(url).play();
+      // Where it actually ran (the graphics chip may have fallen back to the CPU meanwhile).
+      st = await ttsStatus().catch(() => st);
+      setStatus(st);
+      const speed = clip.seconds / Math.max(0.01, took);
+      const where = st?.device === 'webgpu' ? 'graphics chip' : 'CPU';
       setNote(
-        `Made ${clip.seconds.toFixed(1)}s of speech in ${took.toFixed(1)}s ${
-          took < clip.seconds
-            ? '— fast enough to keep up. 🎉'
-            : '— a bit slow on this computer; SLang will pause briefly to catch up.'
-        }`,
+        `Made ${clip.seconds.toFixed(1)}s of speech in ${took.toFixed(1)}s on the ${where} ` +
+          `(${speed.toFixed(1)}× real time) ${
+            speed >= 1.5
+              ? '— fast enough to keep up with nonstop talking.'
+              : speed >= 1
+                ? '— keeps up with most videos; very chatty ones may use your computer’s voice for some lines.'
+                : '— slower than real time here, so some lines will use your computer’s voice.' +
+                  (hasWebGPU && !s.kokoroGpu ? ' Try “Use the graphics chip” below.' : '')
+          }` +
+          (st?.gpuError ? ` (The graphics chip didn’t work: ${st.gpuError}; using the CPU.)` : ''),
       );
       if (s.dubEngine !== 'natural') update({ dubEngine: 'natural' });
     } catch (e) {
@@ -76,11 +105,13 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
       />
       <div class="row">
         <button class="primary" disabled={busy} onClick={() => void hear()}>
-          {status?.loaded ? '▶ Hear it' : `⬇ Download & hear it (~${KOKORO_DOWNLOAD_MB} MB, once)`}
+          {ready
+            ? '▶ Hear it'
+            : `⬇ Download & hear it (~${wantDevice === 'webgpu' ? GPU_DOWNLOAD_MB : KOKORO_DOWNLOAD_MB} MB, once)`}
         </button>
-        <span class={`chip ${status?.loaded ? 'ok' : 'wait'}`}>
-          {status?.loaded
-            ? '✓ Downloaded'
+        <span class={`chip ${ready ? 'ok' : 'wait'}`}>
+          {ready
+            ? '✓ Ready'
             : progress !== null
               ? `Downloading… ${Math.round(progress * 100)}%`
               : busy
@@ -89,6 +120,20 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
         </span>
       </div>
       {note && <p class="muted">{note}</p>}
+      {hasWebGPU && (
+        <Toggle
+          checked={s.kokoroGpu}
+          onChange={(v) => {
+            update({ kokoroGpu: v });
+            setNote('');
+          }}
+        >
+          Use the graphics chip{' '}
+          <span class="muted">
+            (beta · usually several times faster · one-time ~{GPU_DOWNLOAD_MB} MB download)
+          </span>
+        </Toggle>
+      )}
       <p class="muted">
         Runs entirely on your computer — free, and nothing you watch is sent anywhere. The voice
         files download once from Hugging Face.

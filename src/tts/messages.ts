@@ -1,8 +1,8 @@
 /** Kokoro voice requests: page/content → background → offscreen document (where the model runs). */
 export type TtsRequest =
   | { op: 'tts.status' }
-  | { op: 'tts.load' }
-  | { op: 'tts.speak'; text: string; voice: string; speed: number };
+  | { op: 'tts.load'; gpu?: boolean }
+  | { op: 'tts.speak'; text: string; voice: string; speed: number; gpu?: boolean };
 
 export interface TtsStatus {
   loaded: boolean;
@@ -10,6 +10,10 @@ export interface TtsStatus {
   error?: string;
   /** CPU threads the model may use (1 unless the page is cross-origin isolated). */
   threads?: number;
+  /** Where the loaded model runs. */
+  device?: 'wasm' | 'webgpu';
+  /** Set when the graphics chip was requested but couldn't be used (we fell back to the CPU). */
+  gpuError?: string;
 }
 
 export interface TtsClipMessage {

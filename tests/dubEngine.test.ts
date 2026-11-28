@@ -211,3 +211,30 @@ describe('DubEngine with a speaker that prepares audio', () => {
     e.stop();
   });
 });
+
+describe('DubEngine with a fallback voice', () => {
+  it('says a line with the fallback when the main voice is not ready, without pausing', () => {
+    const issues2: (DubIssue | null)[] = [];
+    const fallbackSaid: string[] = [];
+    const v = new FakeVideo();
+    const e = new DubEngine({
+      video: v as unknown as HTMLVideoElement,
+      lang: 'es',
+      voiceURI: null,
+      speaker: { say: () => 'not-ready' as const, whenReady: () => new Promise<void>(() => {}) },
+      fallback: {
+        say: (cue: Cue) => {
+          fallbackSaid.push(cue.text);
+          return { stop: () => {} };
+        },
+      },
+      onIssue: (i) => issues2.push(i),
+    });
+    e.setCues(cues);
+    v.at(1.05);
+    expect(fallbackSaid).toEqual(['Hola a todos.']);
+    expect(v.paused).toBe(false);
+    expect(issues2).toContain('fallback');
+    e.stop();
+  });
+});
