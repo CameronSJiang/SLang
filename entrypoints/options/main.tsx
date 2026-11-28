@@ -13,6 +13,7 @@ import {
 import { loadSettings, saveSettings } from '@/src/storage/settings';
 import { Draco, DracoStyle, type DracoMood } from '@/src/ui/buddy/Draco';
 import { sayWord } from '@/src/ui/buddy/voice';
+import { Icon } from '@/src/ui/icons';
 import { WAITLIST_URL } from '@/src/ui/links';
 import { AIPanel } from '@/src/ui/settings/AIPanel';
 import { DubPanel } from '@/src/ui/settings/DubPanel';
@@ -67,7 +68,7 @@ function Options() {
 
   const update = async (patch: Partial<Settings>) => {
     setS(await saveSettings(patch));
-    setToast('Saved ✓');
+    setToast('Saved');
     setTimeout(() => setToast(''), 1200);
   };
 
@@ -111,11 +112,9 @@ function Options() {
     <main>
       <DracoStyle />
       <header class="page-head">
-        <img src="/icon/128.png" width="64" height="64" alt="" />
+        <img src="/icon/128.png" width="40" height="40" alt="" />
         <div style={{ flex: 1 }}>
-          <h1>
-            <span class="grad-text">SLang</span> settings
-          </h1>
+          <h1>SLang settings</h1>
           <p class="muted">
             Tweak away — everything saves as you go. New here?{' '}
             <a href="/welcome.html">Run the setup guide</a>.
@@ -124,7 +123,7 @@ function Options() {
                 {' '}
                 Want Pro?{' '}
                 <a href={WAITLIST_URL} target="_blank" rel="noreferrer">
-                  Join the waitlist ✨
+                  Join the waitlist
                 </a>
               </>
             )}
@@ -142,7 +141,7 @@ function Options() {
         </p>
       )}
 
-      <Card emoji="🌍" title="Languages">
+      <Card icon="globe" title="Languages">
         <div class="row">
           <span>I’m learning</span> {langSelect('targetLang', 'Language I’m learning')}
           <span>and I speak</span> {langSelect('nativeLang', 'My native language')}
@@ -153,7 +152,7 @@ function Options() {
       </Card>
 
       <Card
-        emoji="📈"
+        icon="gauge"
         title="Your level"
         subtitle="SLang only explains the words you probably don’t know yet. Pick the closest match, or let the quick test figure it out."
       >
@@ -170,7 +169,7 @@ function Options() {
         </div>
       </Card>
 
-      <Card emoji="💬" title="Captions" subtitle="How the words on the video look and behave.">
+      <Card icon="captions" title="Captions" subtitle="How the words on the video look and behave.">
         <span class="field-label">Theme</span>
         <ThemePicker value={s.captionTheme} onChange={(t) => void update({ captionTheme: t })} />
         <div class="sub">
@@ -185,7 +184,7 @@ function Options() {
         </div>
         <div class="sub">
           <label class="field-label" for="fontSize">
-            Text size · {s.captionFontSize}px
+            Text size <span class="readout">{s.captionFontSize}px</span>
           </label>
           <input
             id="fontSize"
@@ -196,7 +195,7 @@ function Options() {
             onChange={(e) => void update({ captionFontSize: Number(e.currentTarget.value) })}
           />
           <label class="field-label" for="position">
-            Height above the bottom · {Math.round(s.captionPosition)}%
+            Height above the bottom <span class="readout">{Math.round(s.captionPosition)}%</span>
           </label>
           <input
             id="position"
@@ -211,12 +210,12 @@ function Options() {
       </Card>
 
       <Card
-        emoji="🐉"
+        icon="message-circle"
         title="Draco, your study buddy"
-        subtitle="Pops up to say words when you tap 🔊, and quizzes you on words you probably know."
+        subtitle="Says a word aloud when you tap its speaker icon, and quizzes you on words you probably know."
       >
         <div class="row" style={{ alignItems: 'center', gap: '16px' }}>
-          <Draco mood={s.buddyEnabled ? dracoMood : 'idle'} size={84} bob={s.buddyEnabled} />
+          <Draco mood={s.buddyEnabled ? dracoMood : 'idle'} size={88} bob={s.buddyEnabled} />
           <div class="stack" style={{ flex: 1 }}>
             <Toggle checked={s.buddyEnabled} onChange={(v) => void update({ buddyEnabled: v })}>
               Draco pops up on videos and runs quizzes
@@ -236,10 +235,12 @@ function Options() {
                   })
                 }
               >
-                🔊 Say hi
+                <Icon name="volume-2" size={15} />
+                Say hi
               </button>
               <a class="btn btn-ghost" href="/review.html">
-                🐉 Quiz me
+                Quiz me
+                <Icon name="arrow-right" size={14} />
               </a>
             </div>
           </div>
@@ -247,7 +248,7 @@ function Options() {
       </Card>
 
       <Card
-        emoji="🎙️"
+        icon="mic"
         title="Dubbing"
         subtitle="Turn videos in your own language into listening practice."
       >
@@ -255,7 +256,7 @@ function Options() {
       </Card>
 
       <Card
-        emoji="🧠"
+        icon="cpu"
         title="AI"
         subtitle="Explains words and translates lines. Tried in this order; captions still work with none."
       >
@@ -274,7 +275,7 @@ function Options() {
                 onClick={() => move(i, -1)}
                 aria-label="Move up"
               >
-                ↑
+                <Icon name="arrow-up" size={15} />
               </button>
               <button
                 class="btn-ghost"
@@ -282,7 +283,7 @@ function Options() {
                 onClick={() => move(i, 1)}
                 aria-label="Move down"
               >
-                ↓
+                <Icon name="arrow-down" size={15} />
               </button>
             </li>
           ))}
@@ -319,6 +320,7 @@ function Options() {
 
       {toast && (
         <div class="toast" role="status">
+          <Icon name="check" size={14} />
           {toast}
         </div>
       )}

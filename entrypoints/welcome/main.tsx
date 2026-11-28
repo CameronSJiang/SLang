@@ -1,3 +1,4 @@
+import { Icon, type IconName } from '@/src/ui/icons';
 import { render, type ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { browser } from 'wxt/browser';
@@ -38,7 +39,7 @@ const article = (word: string) => (/^[AEIOU]/i.test(word) ? 'an' : 'a');
 
 function Step(props: {
   n: number;
-  emoji: string;
+  icon: IconName;
   title: string;
   blurb: ComponentChildren;
   done: boolean;
@@ -47,8 +48,8 @@ function Step(props: {
   return (
     <section class={`card step${props.done ? ' done' : ''}`}>
       <div class="card-head">
-        <span class="emoji" aria-hidden="true">
-          {props.done ? '✅' : props.emoji}
+        <span class={`step-icon${props.done ? ' done' : ''}`} aria-hidden="true">
+          <Icon name={props.done ? 'check' : props.icon} size={16} />
         </span>
         <div>
           <p class="step-n">Step {props.n}</p>
@@ -116,9 +117,7 @@ function Welcome() {
         <img src="/icon/128.png" width="84" height="84" alt="" />
         <div>
           <p class="hello">{HELLO[s.targetLang] ?? 'Hello!'}</p>
-          <h1>
-            Let’s turn your YouTube habit into a <span class="grad-text">{lang} habit</span>.
-          </h1>
+          <h1>Let’s turn your YouTube habit into a {lang} habit.</h1>
           <p class="muted">Five quick steps. About five minutes. Zero textbooks.</p>
         </div>
       </header>
@@ -131,7 +130,7 @@ function Welcome() {
 
       <Step
         n={1}
-        emoji="🌍"
+        icon="globe"
         title="What are we learning?"
         blurb="Pick your target. You can change it any time."
         done={done[0] as boolean}
@@ -144,7 +143,7 @@ function Welcome() {
 
       <Step
         n={2}
-        emoji="🧠"
+        icon="cpu"
         title="Give SLang a brain"
         blurb={
           <>
@@ -160,7 +159,7 @@ function Welcome() {
 
       <Step
         n={3}
-        emoji="🎙️"
+        icon="mic"
         title="Cast your narrator"
         blurb={`SLang can dub ${native} videos into ${lang}, so your guilty-pleasure videos become listening practice. Pick a voice and give it a listen.`}
         done={hasVoice}
@@ -170,7 +169,7 @@ function Welcome() {
 
       <Step
         n={4}
-        emoji="📈"
+        icon="gauge"
         title="How much do you know?"
         blurb="So SLang only explains the words you don’t. Take the quick test, or just pick the closest match."
         done={levelSet}
@@ -183,7 +182,7 @@ function Welcome() {
 
       <Step
         n={5}
-        emoji="🍿"
+        icon="tv"
         title="Go watch something"
         blurb="Seriously, that’s the homework. A few things to try while you’re there:"
         done={s.setupDone}
@@ -211,7 +210,8 @@ function Welcome() {
             target="_blank"
             onClick={() => update({ setupDone: true })}
           >
-            ▶ Watch {article(lang)} {lang} video
+            <Icon name="play" size={13} />
+            Watch {article(lang)} {lang} video
           </a>
           <a
             class="btn"
@@ -219,10 +219,11 @@ function Welcome() {
             target="_blank"
             onClick={() => update({ setupDone: true })}
           >
-            🎙️ Dub {article(native)} {native} video
+            <Icon name="mic" size={14} />
+            Dub {article(native)} {native} video
           </a>
           <button class="btn-ghost" onClick={() => update({ setupDone: true })}>
-            {s.setupDone ? 'All set ✓' : 'Finish setup'}
+            {s.setupDone ? 'All set' : 'Finish setup'}
           </button>
           <button class="btn-ghost" onClick={() => void browser.runtime.openOptionsPage()}>
             All settings

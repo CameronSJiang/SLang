@@ -1,3 +1,4 @@
+import { Icon } from '@/src/ui/icons';
 import { useEffect, useState } from 'preact/hooks';
 import { browser } from 'wxt/browser';
 import { KOKORO_SPEED_RANGE, type Settings } from '@/src/core/settings';
@@ -92,8 +93,8 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
         onChange={(v) => update({ kokoroVoice: v })}
       />
       <label class="field-label" for="kspeed">
-        Energy · {s.kokoroSpeed <= 0.95 ? 'calm' : s.kokoroSpeed >= 1.15 ? 'hyped' : 'lively'} (
-        {s.kokoroSpeed.toFixed(2)}×)
+        Energy · {s.kokoroSpeed <= 0.95 ? 'calm' : s.kokoroSpeed >= 1.15 ? 'hyped' : 'lively'}
+        <span class="readout">{s.kokoroSpeed.toFixed(2)}×</span>
       </label>
       <input
         id="kspeed"
@@ -106,13 +107,15 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
       />
       <div class="row">
         <button class="primary" disabled={busy} onClick={() => void hear()}>
+          <Icon name={ready ? 'play' : 'download'} size={14} />
           {ready
-            ? '▶ Hear it'
-            : `⬇ Download & hear it (~${wantDevice === 'webgpu' ? GPU_DOWNLOAD_MB : KOKORO_DOWNLOAD_MB} MB, once)`}
+            ? 'Hear it'
+            : `Download & hear it (~${wantDevice === 'webgpu' ? GPU_DOWNLOAD_MB : KOKORO_DOWNLOAD_MB} MB, once)`}
         </button>
         <span class={`chip ${ready ? 'ok' : 'wait'}`}>
+          {ready && <Icon name="check" size={12} />}
           {ready
-            ? '✓ Ready'
+            ? 'Ready'
             : progress !== null
               ? `Downloading… ${Math.round(progress * 100)}%`
               : busy

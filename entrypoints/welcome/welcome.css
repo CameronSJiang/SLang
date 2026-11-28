@@ -5,22 +5,21 @@
   margin: 12px 0 20px;
 }
 .welcome .hero img {
-  border-radius: 22px;
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 12px;
   flex: none;
 }
 .welcome .hello {
   margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
 }
 .welcome h1 {
   font-size: 32px;
 }
 .meter {
-  height: 8px;
-  border-radius: 999px;
+  height: 3px;
+  border-radius: 2px;
   background: var(--line);
   overflow: hidden;
 }
@@ -36,17 +35,31 @@
 }
 .step-n {
   margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--dim);
 }
 .step.done {
-  border-color: color-mix(in srgb, var(--ok) 35%, var(--line));
+  border-color: rgba(16, 185, 129, 0.25);
 }
 .tips {
   margin: 0;
   padding-left: 20px;
   line-height: 1.7;
+}
+
+.step-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+.step-icon.done {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
 }

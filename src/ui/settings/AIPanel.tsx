@@ -1,3 +1,4 @@
+import { Icon } from '@/src/ui/icons';
 import { useEffect, useState } from 'preact/hooks';
 import { LANGUAGES, type Settings } from '@/src/core/settings';
 import { AnthropicProvider } from '@/src/llm/anthropic';
@@ -105,7 +106,8 @@ export function AIPanel({
 
   const statusChip = (a: ChromeAIStatus['prompt'] | undefined) => (
     <span class={`chip ${a === 'available' ? 'ok' : 'wait'}`}>
-      {a ? (a === 'available' ? '✓ ' : '') + STATUS_TEXT[a] : 'Checking…'}
+      {a === 'available' && <Icon name="check" size={12} />}
+      {a ? STATUS_TEXT[a] : 'Checking…'}
     </span>
   );
 
@@ -130,7 +132,8 @@ export function AIPanel({
       <div class="row">
         {needsDownload && (
           <button class="primary" onClick={() => void startDownload()}>
-            ⬇ Download Chrome AI
+            <Icon name="download" size={14} />
+            Download Chrome AI
           </button>
         )}
         <button
@@ -140,7 +143,8 @@ export function AIPanel({
           Test it
         </button>
         <button class="btn-ghost" onClick={refresh}>
-          ↻ Recheck
+          <Icon name="refresh-cw" size={14} />
+          Recheck
         </button>
       </div>
       {download && <p class="muted">{download}</p>}

@@ -53,7 +53,7 @@ export interface OverlayProps {
   sourceFor?: (cue: Cue) => string | undefined;
   /** Extra status messages (e.g. dub mode), shown with the AI status. */
   messages?: readonly string[];
-  /** Say a word aloud (🔊). Defaults to the browser's voice. */
+  /** Say a word aloud (speaker button). Defaults to the browser's voice. */
   pronounce?(text: string, lang: string, on: PronounceEvents): SayHandle;
 }
 
@@ -229,7 +229,7 @@ export function Overlay({
     onWord?.('lookup', ann, token);
   };
 
-  /** 🔊: say the word; Draco pops up and says it too (unless he's switched off). */
+  /** Speaker button: say the word; Draco pops up and says it too (unless he's switched off). */
   const sayToken = (token: Token) => {
     saying.current?.stop();
     clearTimeout(buddyTimer.current);

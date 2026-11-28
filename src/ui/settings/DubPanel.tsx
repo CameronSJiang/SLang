@@ -1,3 +1,4 @@
+import { Icon } from '@/src/ui/icons';
 import { useEffect, useState } from 'preact/hooks';
 import { voicesFor } from '@/src/core/dub';
 import { PLAYBACK_PRESETS } from '@/src/core/playback';
@@ -45,7 +46,7 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
             onClick={() => update({ playbackPreset: p })}
           >
             <span class="tag" aria-hidden="true">
-              {PRESET_INFO[p].emoji}
+              <Icon name={PRESET_INFO[p].icon} size={15} />
             </span>
             <span>
               <b>{PRESET_INFO[p].label}</b>
@@ -68,7 +69,7 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
               onClick={() => update({ dubEngine: 'natural' })}
             >
               <span class="tag" aria-hidden="true">
-                🌟
+                <Icon name="sparkles" size={15} />
               </span>
               <span>
                 <b>Natural (beta)</b>
@@ -85,7 +86,7 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
               onClick={() => update({ dubEngine: 'system' })}
             >
               <span class="tag" aria-hidden="true">
-                💻
+                <Icon name="monitor" size={15} />
               </span>
               <span>
                 <b>System voices</b>
@@ -122,7 +123,8 @@ export function DubPanel({ s, update }: { s: Settings; update(p: Partial<Setting
                   speak(SAMPLE[s.targetLang] ?? SAMPLE.es ?? '', s.targetLang, chosen.voiceURI)
                 }
               >
-                ▶ Hear it
+                <Icon name="play" size={14} />
+                Hear it
               </button>
             </div>
           ) : (

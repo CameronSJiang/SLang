@@ -30,6 +30,8 @@ export default defineConfig({
     // Cross-origin isolation lets the voice model use several CPU threads.
     cross_origin_embedder_policy: { value: 'require-corp' },
     cross_origin_opener_policy: { value: 'same-origin' },
+    // Draco's image is shown inside the video overlay too.
+    web_accessible_resources: [{ resources: ['draco.png'], matches: ['<all_urls>'] }],
     commands: {
       'toggle-slang': {
         suggested_key: { default: 'Alt+Shift+S' },

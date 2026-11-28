@@ -1,10 +1,11 @@
 /** Small UI kit for SLang's extension pages (styles in page.css). */
 import type { ComponentChildren } from 'preact';
 import { CAPTION_THEMES, LEVELS, type CaptionTheme, type Level } from '@/src/core/settings';
+import { Icon, type IconName } from '@/src/ui/icons';
 import { THEMES } from '@/src/ui/overlay/themes';
 
 export function Card(props: {
-  emoji: string;
+  icon: IconName;
   title: ComponentChildren;
   subtitle?: ComponentChildren;
   children?: ComponentChildren;
@@ -12,9 +13,7 @@ export function Card(props: {
   return (
     <section class="card">
       <div class="card-head">
-        <span class="emoji" aria-hidden="true">
-          {props.emoji}
-        </span>
+        <Icon name={props.icon} size={18} class="card-icon" />
         <div>
           <h2>{props.title}</h2>
           {props.subtitle && <p class="muted">{props.subtitle}</p>}
@@ -57,15 +56,7 @@ export function PowerButton(props: { on: boolean; onChange(on: boolean): void })
       title={`Turn SLang ${props.on ? 'off' : 'on'} (${ALT_KEY}+Shift+S)`}
       onClick={() => props.onChange(!props.on)}
     >
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path
-          d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.4"
-          stroke-linecap="round"
-        />
-      </svg>
+      <Icon name="power" size={16} />
     </button>
   );
 }

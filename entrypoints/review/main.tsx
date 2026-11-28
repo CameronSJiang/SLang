@@ -1,3 +1,4 @@
+import { Icon } from '@/src/ui/icons';
 import { render, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { buildQuiz, type QuizQuestion, type QuizWord } from '@/src/core/quiz';
@@ -166,8 +167,18 @@ function Quiz({ s, onFinished }: { s: Settings; onFinished(): void }) {
   return (
     <section class="card quiz">
       <div class="quiz-stage">
-        <Draco mood={mood} size={128} bob={mood === 'idle'} />
-        <div class="speech">{bubble}</div>
+        <Draco mood={mood} size={104} bob={mood === 'idle'} />
+        <div class="quiz-stage-body">
+          <div class="speech">{bubble}</div>
+          {(phase === 'intro' || phase === 'done') && enough && (
+            <div class="row">
+              <button class="primary" onClick={start}>
+                {phase === 'done' ? 'Quiz me again' : `Quiz me (${QUIZ_LENGTH} words)`}
+                <Icon name="arrow-right" size={14} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {(phase === 'asking' || phase === 'answered') && q && (
@@ -203,7 +214,8 @@ function Quiz({ s, onFinished }: { s: Settings; onFinished(): void }) {
           </div>
           <div class="row">
             <button class="btn-ghost" onClick={() => say(q.word.surface ?? q.word.lemma)}>
-              🔊 Hear it
+              <Icon name="volume-2" size={15} />
+              Hear it
             </button>
             {phase === 'answered' && q.word.videoId && (
               <a
@@ -212,25 +224,19 @@ function Quiz({ s, onFinished }: { s: Settings; onFinished(): void }) {
                 target="_blank"
                 rel="noreferrer"
               >
-                ▶ Watch the clip
+                <Icon name="play" size={13} />
+                Watch the clip
               </a>
             )}
             <span style={{ flex: 1 }} />
             {phase === 'answered' && (
               <button class="primary" onClick={next}>
-                {i + 1 < qs.length ? 'Next →' : 'Finish'}
+                {i + 1 < qs.length ? 'Next' : 'Finish'}
+                <Icon name="arrow-right" size={14} />
               </button>
             )}
           </div>
         </>
-      )}
-
-      {(phase === 'intro' || phase === 'done') && enough && (
-        <div class="row">
-          <button class="primary" onClick={start}>
-            {phase === 'done' ? '🐉 Quiz me again' : `🐉 Quiz me (${QUIZ_LENGTH} words)`}
-          </button>
-        </div>
       )}
     </section>
   );
@@ -254,11 +260,9 @@ function Review() {
     <main style={{ maxWidth: '720px' }}>
       <DracoStyle />
       <header class="page-head">
-        <img src="/icon/128.png" width="56" height="56" alt="" />
+        <img src="/icon/128.png" width="40" height="40" alt="" />
         <div>
-          <h1>
-            Quiz & <span class="grad-text">saved words</span>
-          </h1>
+          <h1>Quiz & saved words</h1>
           <p class="muted">Draco quizzes you on words from the videos you’ve watched.</p>
         </div>
       </header>
@@ -272,8 +276,11 @@ function Review() {
         s && <Quiz s={s} onFinished={load} />
       )}
 
-      <h2 style={{ margin: '28px 0 4px' }}>Saved words</h2>
-      <p class="muted">
+      <div class="section-head">
+        <h2>Saved words</h2>
+        {cards && cards.length > 0 && <span class="mono count">{cards.length}</span>}
+      </div>
+      <p class="muted section-note">
         Words you save with <b>Save</b> on a video (and ones you miss in a quiz) show up here, with
         the sentence and a link back to the moment you heard them.
       </p>
@@ -288,17 +295,32 @@ function Review() {
           {cards.map((c) => (
             <li key={c.id}>
               <div>
-                <b lang={c.lang}>{c.lemma}</b> —{' '}
-                {c.gloss || <span class="muted">no meaning yet</span>}
+                <span class="word" lang={c.lang}>
+                  {c.lemma}
+                </span>
+                <span class="gloss"> · {c.gloss || 'no meaning yet'}</span>
               </div>
-              <div class="muted" lang={c.lang}>
+              <div class="sentence" lang={c.lang}>
                 “{c.sentence}”
               </div>
-              <div class="row">
-                <a href={clipUrl(c.videoId, c.t)} target="_blank" rel="noreferrer">
-                  ▶ Watch the clip
+              <div class="actions">
+                <a
+                  class="btn btn-ghost"
+                  href={clipUrl(c.videoId, c.t)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Icon name="play" size={13} />
+                  Watch clip
                 </a>
-                <button onClick={() => void remove(c.id)}>Remove</button>
+                <button
+                  class="btn-ghost"
+                  onClick={() => void remove(c.id)}
+                  aria-label={`Remove ${c.lemma}`}
+                >
+                  <Icon name="trash-2" size={14} />
+                  Remove
+                </button>
               </div>
             </li>
           ))}

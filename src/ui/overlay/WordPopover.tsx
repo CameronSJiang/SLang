@@ -1,3 +1,4 @@
+import { Icon } from '../icons';
 import { useEffect } from 'preact/hooks';
 import type { WordInfo } from '../../core/glossPolicy';
 import type { Token } from '../../core/types';
@@ -30,7 +31,7 @@ interface PopoverProps {
   bottom: number;
   onAction(a: Exclude<WordAction, 'lookup'>): void;
   onClose(): void;
-  /** 🔊 pressed. */
+  /** Speaker button pressed. */
   onSpeak(): void;
 }
 
@@ -71,7 +72,7 @@ export function WordPopover({
         </span>
         {pos && <span class="pos">{pos}</span>}
         <button class="icon" aria-label="Pronounce" onClick={onSpeak}>
-          🔊
+          <Icon name="volume-2" size={16} />
         </button>
         <button class="icon close" aria-label="Close" onClick={onClose}>
           ×
@@ -86,7 +87,7 @@ export function WordPopover({
           disabled={saved}
           onClick={() => onAction('save')}
         >
-          {saved ? 'Saved ✓' : 'Save'}
+          {saved ? 'Saved' : 'Save'}
         </button>
         <button onClick={() => onAction('known')}>Known</button>
         <button onClick={() => onAction('ignore')}>Ignore</button>

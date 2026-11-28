@@ -66,8 +66,8 @@ export function PlacementTest({ s, onDone }: Props) {
           <span style={{ width: `${pct}%` }} />
         </div>
         <p class="muted">
-          Do you know this word? Some are fake — say no to those, we’re watching 👀 (
-          {answers.length + 1}/{items.length})
+          Do you know this word? Some are made up, so say no to those. ({answers.length + 1}/
+          {items.length})
         </p>
         <p class="placement-word" lang={s.targetLang}>
           {item?.word}
@@ -94,7 +94,7 @@ export function PlacementTest({ s, onDone }: Props) {
       </div>
       {result && (
         <p class="muted">
-          🎉 About {result.vocab.toLocaleString()} words — that’s level {result.level}. Saved.
+          About {result.vocab.toLocaleString()} words, so level {result.level}. Saved.
           {result.falseAlarmRate > 0.3 &&
             ' (A few fake words fooled you, so we nudged the estimate down.)'}
         </p>

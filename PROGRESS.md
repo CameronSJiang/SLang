@@ -13,8 +13,8 @@ ahead (rolling), slot = until next caption, 1.0–1.6×, ≤1.2 s overrun before
 
 ## 0.1.x — Polish ✅
 
-Welcome guide, icon, `pnpm zip` + `docs/INSTALL.md`, design kit (`ui/settings/page.css`, `kit.tsx`), 6 caption
-themes, gloss labels (not `<ruby>`). Master on/off (`enabled`): power buttons, Alt+Shift+S, OFF badge.
+Welcome guide, icon, `pnpm zip`, design system matching the site (`page.css`, bundled fonts, Lucide icons
+in `ui/icons.tsx`, no emoji), 6 caption themes, gloss labels. Master on/off: power buttons, Alt+Shift+S.
 
 ## Natural voice (Kokoro) ✅
 
@@ -24,7 +24,7 @@ from `core/g2p/es.ts`. ~0.6× real time on 4 cloud CPU cores, so lines not ready
 
 ## Draco + waitlist ✅
 
-Draco (SVG/CSS, `ui/buddy/`) pops up on 🔊 and says the word; review-page quiz (`core/quiz.ts`): right →
+Draco (`public/draco.png` + CSS motion, `ui/buddy/`) pops up on the speaker button; review-page quiz (`core/quiz.ts`): right →
 `quiz-right`, wrong → saved + FSRS Again. `site/`: waitlist page (`FORM_URL`) + `create-form.gs` (Apps Script).
 
 **Next:** M4 rest — due badge (`chrome.alarms`), Again/Hard/Good/Easy card reviews.

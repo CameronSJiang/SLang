@@ -3,6 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { browser } from 'wxt/browser';
 import { PLAYBACK_PRESETS } from '@/src/core/playback';
 import { LANGUAGES, type Settings } from '@/src/core/settings';
+import { Icon } from '@/src/ui/icons';
 import { PRESET_INFO } from '@/src/ui/presets';
 import { PowerButton } from '@/src/ui/settings/kit';
 import { loadSettings, saveSettings } from '@/src/storage/settings';
@@ -41,7 +42,7 @@ function Popup() {
         func: () => document.querySelector('video') !== null,
       });
       if (!probe?.result) {
-        setMessage('No video on this page. 🤷');
+        setMessage('No video on this page.');
         return;
       }
       await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['/html5.js'] });
@@ -69,15 +70,17 @@ function Popup() {
       </header>
 
       {!s.setupDone && (
-        <button class="primary setup" onClick={() => openPage('/welcome.html')}>
-          ✨ Finish setting up (5 min)
+        <button class="setup" onClick={() => openPage('/welcome.html')}>
+          <Icon name="sparkles" size={14} />
+          Finish setting up
+          <span class="mono setup-time">5 min</span>
         </button>
       )}
 
       {!s.enabled && (
         <p class="off-note">
-          SLang is taking a nap 😴 No captions, no dubbing, no AI. Hit the power button to wake it
-          up.
+          SLang is off. Videos play normally: no captions, no dubbing, no AI. Turn it back on with
+          the power button.
         </p>
       )}
 
@@ -94,7 +97,8 @@ function Popup() {
                 title={PRESET_INFO[p].desc}
                 onClick={() => update({ playbackPreset: p })}
               >
-                <span aria-hidden="true">{PRESET_INFO[p].emoji}</span> {PRESET_INFO[p].label}
+                <Icon name={PRESET_INFO[p].icon} size={15} />
+                {PRESET_INFO[p].label}
               </button>
             ))}
           </div>
@@ -104,24 +108,33 @@ function Popup() {
 
       {s.enabled &&
         (isYouTube(tabUrl) ? (
-          <p class="muted">▶ Running on YouTube automatically.</p>
+          <p class="status-line">
+            <span class="live-dot" aria-hidden="true" />
+            Running on YouTube automatically
+          </p>
         ) : (
-          <button onClick={() => void showOnPage()}>Show captions on this page</button>
+          <button class="primary cta" onClick={() => void showOnPage()}>
+            <Icon name="captions" size={15} />
+            Show captions on this page
+          </button>
         ))}
       {s.enabled && message && <p class="muted">{message}</p>}
 
       {WAITLIST_URL && (
         <a class="muted waitlist" href={WAITLIST_URL} target="_blank" rel="noreferrer">
-          ✨ SLang Pro is coming. Join the waitlist
+          SLang Pro is coming. Join the waitlist
+          <Icon name="external-link" size={12} />
         </a>
       )}
 
       <footer class="popup-foot">
-        <button class="btn-ghost" onClick={() => openPage('/review.html')}>
-          🐉 Quiz & saved words
+        <button class="foot-link" onClick={() => openPage('/review.html')}>
+          <Icon name="bookmark" size={15} />
+          Quiz & saved words
         </button>
-        <button class="btn-ghost" onClick={() => void browser.runtime.openOptionsPage()}>
-          ⚙️ Settings
+        <button class="foot-link" onClick={() => void browser.runtime.openOptionsPage()}>
+          <Icon name="settings" size={15} />
+          Settings
         </button>
       </footer>
     </main>
