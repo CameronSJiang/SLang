@@ -18,9 +18,9 @@ themes, gloss labels (not `<ruby>`). Master on/off (`enabled`): power buttons, A
 
 ## Natural voice (Kokoro) ✅
 
-On-device Kokoro-82M (q8, onnxruntime-web) in the offscreen doc; Spanish phonemes from `core/g2p/es.ts`.
-DubEngine takes a Speaker (system / Kokoro), prefetches 4 lines, holds the video while one generates.
-ORT wasm bundled in `/ort/`; pages cross-origin isolated → 4 threads. ~0.6× real time on 4 cloud cores.
+On-device Kokoro-82M (q8, onnxruntime-web, ORT wasm in `/ort/`, 4 threads) in the offscreen doc; phonemes
+from `core/g2p/es.ts`. ~0.6× real time on 4 cloud CPU cores, so lines not ready in time use the system voice
+(no pause); opt-in WebGPU (fp32, 325 MB) after an adapter check.
 
 ## Draco + waitlist ✅
 
