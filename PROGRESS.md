@@ -8,8 +8,8 @@ word popover (Save/Known/Ignore, TTS), placement test. Freq lists: wordfreq, CC 
 
 ## M2.5 — Dub mode ✅
 
-Presets → audio + caption layers; source → L2 translation jobs (cached); dub engine (fit 1.0–1.6×, hold on
-overrun, duck to 15%, resync on seek/pause/ads). English-audio videos with L2 subs dub from that track.
+Presets → audio + caption layers; source → L2 translation jobs (cached); dub engine: audio prepared 90 s
+ahead, slot = until next caption, 1.0–1.6×, ≤1.2 s overrun before pausing, duck to 15%, resync on seek/ads.
 
 ## 0.1.x — Polish ✅
 

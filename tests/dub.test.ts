@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { fitRate, pickVoice, voicesFor } from '../src/core/dub';
+import {
+  MAX_SLOT_EXTEND_S,
+  fitRate,
+  pickVoice,
+  prefetchWindow,
+  slotEnd,
+  voicesFor,
+} from '../src/core/dub';
 
 describe('fitRate', () => {
   it('speaks at normal speed when the line fits', () => {
@@ -38,4 +45,31 @@ describe('voices', () => {
     expect(pickVoice(voices, 'es', 'gone')?.name).toBe('Jorge');
     expect(pickVoice([v('Google español', 'es-ES', false)], 'es', null)).toBeUndefined();
   });
+});
+
+describe('slotEnd', () => {
+  const cs = [
+    { start: 0, end: 1 },
+    { start: 1.5, end: 2 },
+    { start: 10, end: 12 },
+    { start: 11, end: 13 }, // overlaps the previous one (rolling auto-captions)
+  ];
+  it('runs until the next caption appears', () => expect(slotEnd(cs, 0)).toBe(1.5));
+  it('borrows at most MAX_SLOT_EXTEND_S after its own end', () =>
+    expect(slotEnd(cs, 1)).toBe(2 + MAX_SLOT_EXTEND_S));
+  it('stops at the next start when captions overlap', () => expect(slotEnd(cs, 2)).toBe(11));
+  it('the last line gets the extension too', () =>
+    expect(slotEnd(cs, 3)).toBe(13 + MAX_SLOT_EXTEND_S));
+});
+
+describe('prefetchWindow', () => {
+  const cs = [
+    { id: 'a', start: 0, end: 2 },
+    { id: 'b', start: 5, end: 6 },
+    { id: 'c', start: 100, end: 101 },
+  ];
+  it('includes the current line and what starts within the window', () =>
+    expect(prefetchWindow(cs, 1, 90).map((c) => c.id)).toEqual(['a', 'b']));
+  it('skips lines already over', () =>
+    expect(prefetchWindow(cs, 3, 90).map((c) => c.id)).toEqual(['b']));
 });

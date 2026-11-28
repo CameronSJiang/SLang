@@ -17,6 +17,36 @@ export function fitRate(text: string, seconds: number): number {
   return Math.min(MAX_RATE, Math.max(MIN_RATE, need / seconds));
 }
 
+/** A line may borrow this long after its caption ends, if the next caption hasn't appeared. */
+export const MAX_SLOT_EXTEND_S = 2;
+
+interface Timed {
+  start: number;
+  end: number;
+}
+
+/**
+ * When cues[i] has to be finished: when the next caption appears (not when this one's own
+ * timestamp ends; YouTube captions often vanish early), up to MAX_SLOT_EXTEND_S past its end.
+ */
+export function slotEnd(cues: readonly Timed[], i: number): number {
+  const c = cues[i];
+  if (!c) return 0;
+  const limit = c.end + MAX_SLOT_EXTEND_S;
+  const next = cues[i + 1];
+  const until = next && next.start > c.start ? Math.min(next.start, limit) : limit;
+  return Math.max(c.start + 0.3, until);
+}
+
+/** Cues that still need audio within `windowS` seconds of `t` (the current one included), in order. */
+export function prefetchWindow<C extends Timed>(
+  cues: readonly C[],
+  t: number,
+  windowS: number,
+): C[] {
+  return cues.filter((c) => c.end > t && c.start < t + windowS);
+}
+
 export interface VoiceLike {
   voiceURI: string;
   name: string;

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DUCK_LEVEL, DubEngine, type DubIssue } from '../src/ui/dub/engine';
+import { DUCK_LEVEL, DubEngine, MAX_LAG_S, type DubIssue } from '../src/ui/dub/engine';
 import type { Cue } from '../src/core/types';
 
 class FakeVideo extends EventTarget {
@@ -97,19 +97,40 @@ describe('DubEngine', () => {
     expect(synth.spoken).toHaveLength(1);
   });
 
-  it('speeds long lines up (max 1.6×)', () => {
+  it('gives a line until the next caption appears, not just its own end time', () => {
+    // "b" is shown 3–4 s but "c" only appears at 6 s: 3 s is plenty, no speed-up needed.
     video.at(3.01);
+    expect(synth.spoken[0]?.rate).toBeLessThan(1.1);
+  });
+
+  it('speeds long lines up (max 1.6×) when the next caption follows right away', () => {
+    engine.setCues([
+      { id: 'x', start: 1, end: 2, text: 'Esta frase es demasiado larga para un segundo.' },
+      { id: 'y', start: 2, end: 3, text: 'Sí.' },
+    ]);
+    video.at(1.01);
     expect(synth.spoken[0]?.rate).toBe(1.6);
   });
 
-  it('holds the video while a line overruns, then says the next one', () => {
+  it('lets a line run a little into the next one before pausing the video', () => {
     video.at(1.05);
-    video.at(3.01); // line a still talking
-    expect(video.paused).toBe(true);
-    expect(synth.spoken).toHaveLength(1);
-    synth.finish();
-    expect(synth.spoken.map((u) => u.text)).toHaveLength(2);
+    video.at(3.01); // "a" still talking as "b" starts: queue "b", keep playing
     expect(video.paused).toBe(false);
+    expect(synth.spoken).toHaveLength(1);
+    video.at(3 + MAX_LAG_S + 0.1); // still talking well into "b": now wait for it
+    expect(video.paused).toBe(true);
+    synth.finish();
+    expect(synth.spoken.map((u) => u.text)).toEqual(['Hola a todos.', cues[1]?.text]);
+    expect(video.paused).toBe(false);
+  });
+
+  it('a short overrun never pauses, and the next line starts as soon as the previous ends', () => {
+    video.at(1.05);
+    video.at(3.01);
+    video.at(3.5);
+    synth.finish(); // "a" ends 0.5 s late
+    expect(video.paused).toBe(false);
+    expect(synth.spoken.at(-1)?.text).toBe(cues[1]?.text);
   });
 
   it('a seek stops speech, restores volume, and skips lines joined too late', () => {
@@ -176,8 +197,9 @@ describe('DubEngine with a speaker that prepares audio', () => {
       speaker,
     });
     e.setCues(cues);
+    // The whole window is prepared as soon as the captions arrive, before playback.
+    expect(prepared[0]).toEqual(['a', 'b', 'c']);
     v.at(1.05);
-    expect(prepared[0]).toEqual(['b', 'c']);
     expect(v.paused).toBe(true); // waiting for audio
     ready = true;
     await new Promise((r) => setTimeout(r, 20));

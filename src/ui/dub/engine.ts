@@ -1,12 +1,13 @@
 /**
- * Speaks dubbed cues in sync with a video. Lowers the original audio while
- * speaking, speeds lines up to fit, and briefly pauses the video when a line
- * still overruns into the next one (or its audio isn't generated yet). The
- * voice itself is a pluggable Speaker: the browser's speechSynthesis by
- * default, or on-device Kokoro (see kokoroSpeaker.ts).
+ * Speaks dubbed cues in sync with a video. The whole caption track is known in
+ * advance, so audio is prepared well ahead of the playhead. Each line may use the
+ * time until the next caption appears; lines are sped up to fit, may run a little
+ * into the next one (which then speeds up to catch back up), and only if a line is
+ * still talking well into the next one does the video pause briefly. The voice is
+ * a pluggable Speaker: the browser's speechSynthesis, or on-device Kokoro.
  */
 import { findCueIndex } from '../../core/cueIndex';
-import { fitRate, pickVoice } from '../../core/dub';
+import { fitRate, pickVoice, prefetchWindow, slotEnd } from '../../core/dub';
 import type { Cue } from '../../core/types';
 
 /** Original audio level while the dub voice speaks, relative to the user's volume. */
@@ -15,8 +16,14 @@ export const DUCK_LEVEL = 0.15;
 const MAX_LATE_S = 1.0;
 /** How long to hold the video waiting for a line's audio before skipping it. */
 const READY_TIMEOUT_MS = 8000;
-/** Cues to prepare ahead of the playhead. */
-const LOOKAHEAD = 4;
+/** Prepare audio this far ahead of the playhead (video seconds). */
+export const PREFETCH_S = 90;
+/** A line may run this far into the next one before the video waits for it. */
+export const MAX_LAG_S = 1.2;
+/** Start lines slightly early to cover audio start-up latency. */
+const LEAD_S = 0.1;
+/** Never give a line less than this to fit into (seconds). */
+const MIN_SLOT_S = 0.5;
 
 export type DubIssue = 'no-voice' | 'blocked' | 'preparing';
 
@@ -124,6 +131,14 @@ export class DubEngine {
 
   setCues(cues: Cue[]): void {
     this.cues = cues;
+    this.prefetch();
+  }
+
+  /** Start preparing everything in the next PREFETCH_S seconds (also while paused). */
+  private prefetch() {
+    if (this.stopped) return;
+    const t = this.o.video.currentTime || 0;
+    this.speaker.upcoming?.(prefetchWindow(this.cues, t, PREFETCH_S));
   }
 
   /** Ads, overlay hidden, etc. */
@@ -170,18 +185,18 @@ export class DubEngine {
   private tick = () => {
     const v = this.o.video;
     if (this.stopped || this.suspended || v.paused) return;
-    const i = findCueIndex(this.cues, v.currentTime);
+    const now = v.currentTime;
+    // The previous line has run too far into this one: wait for it.
+    if (this.queued && now - this.queued.start > MAX_LAG_S) this.hold();
+    const i = findCueIndex(this.cues, now + LEAD_S);
     if (i === this.lastIndex) return;
     this.lastIndex = i;
-    // Prepare what's coming (from the current cue, or the next one in a gap).
-    const from = i >= 0 ? i + 1 : this.cues.findIndex((c) => c.start > v.currentTime);
-    if (from >= 0) this.speaker.upcoming?.(this.cues.slice(from, from + LOOKAHEAD));
+    this.prefetch();
     const cue = this.cues[i];
-    if (!cue || v.currentTime - cue.start > MAX_LATE_S) return;
+    if (!cue || now + LEAD_S - cue.start > MAX_LATE_S) return;
     if (this.current || this.waitingFor) {
-      // Previous line is still talking (or still being prepared): hold the video, then say this one.
+      // Previous line still talking (or being prepared): say this one right after it.
       this.queued = cue;
-      this.hold();
       return;
     }
     this.speak(cue);
@@ -197,6 +212,7 @@ export class DubEngine {
     cur?.stop();
     this.unduck();
     this.release();
+    this.prefetch();
   };
 
   /** The current line finished (or failed): say the queued one or let the video go. */
@@ -215,7 +231,10 @@ export class DubEngine {
     if (!cue.text) return this.next();
     const v = this.o.video;
     const videoRate = v.playbackRate || 1;
-    const seconds = (cue.end - cue.start) / videoRate;
+    // Time left until the next caption appears; a late start (after an overrun) gets less,
+    // so the line speeds up and catches back up.
+    const until = slotEnd(this.cues, this.cues.indexOf(cue));
+    const seconds = Math.max(MIN_SLOT_S, until - Math.max(v.currentTime, cue.start)) / videoRate;
     let mine: Utterance | null = null;
     const r = this.speaker.say(cue, seconds, videoRate, () => {
       if (this.current !== mine) return; // cancelled

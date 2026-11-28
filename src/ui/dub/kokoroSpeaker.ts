@@ -14,8 +14,8 @@ interface Ready {
   seconds: number;
 }
 
-/** Clips kept in memory (older ones are released). */
-const KEEP = 40;
+/** Clips kept in memory (older ones are released); enough for the 90 s prefetch window. */
+const KEEP = 150;
 
 export class KokoroSpeaker implements Speaker {
   private clips = new Map<string, Promise<Ready>>();
