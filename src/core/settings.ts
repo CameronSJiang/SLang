@@ -55,8 +55,11 @@ export interface Settings {
   kokoroVoice: string;
   /** Kokoro speaking speed (0.8–1.3). */
   kokoroSpeed: number;
-  /** Run Kokoro on the graphics chip (WebGPU) instead of the CPU. */
-  kokoroGpu: boolean;
+  /**
+   * Keep Kokoro on the CPU. By default it runs on the graphics chip (WebGPU) when there is a
+   * usable one, which is several times faster.
+   */
+  kokoroCpuOnly: boolean;
   /** Draco the dragon pops up to say words (🔊) and runs quizzes. */
   buddyEnabled: boolean;
   /** The first-run welcome guide was finished. */
@@ -83,7 +86,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze<Settings>({
   dubEngine: 'system',
   kokoroVoice: 'ef_dora',
   kokoroSpeed: 1.05,
-  kokoroGpu: false,
+  kokoroCpuOnly: false,
   buddyEnabled: true,
   setupDone: false,
 });
@@ -149,7 +152,7 @@ export function normalizeSettings(raw: unknown): Settings {
         ? r.kokoroVoice
         : d.kokoroVoice,
     kokoroSpeed: clampNum(r.kokoroSpeed, KOKORO_SPEED_RANGE, d.kokoroSpeed),
-    kokoroGpu: r.kokoroGpu === true,
+    kokoroCpuOnly: r.kokoroCpuOnly === true,
     buddyEnabled: typeof r.buddyEnabled === 'boolean' ? r.buddyEnabled : d.buddyEnabled,
     setupDone: r.setupDone === true,
   };

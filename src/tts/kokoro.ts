@@ -1,6 +1,7 @@
 /**
  * Kokoro-82M text-to-speech, on-device (onnxruntime-web via transformers.js).
- * Runs in an extension document (offscreen/options). The model (~90 MB) and
+ * Runs in an extension document (offscreen/options). The model (~325 MB for the graphics chip,
+ * ~90 MB for the CPU) and
  * voice files download once from Hugging Face and are cached by the browser.
  * Inference follows kokoro-js (Apache-2.0); phonemes come from our own G2P so
  * non-English voices work.
@@ -38,7 +39,7 @@ export const kokoroThreads = (): number => env.backends.onnx.wasm?.numThreads ??
 
 type Progress = (fraction: number) => void;
 
-/** Where the model runs: CPU (WebAssembly, 8-bit, ~90 MB) or the graphics chip (WebGPU, 32-bit, ~310 MB). */
+/** Where the model runs: graphics chip (WebGPU, 32-bit, ~325 MB; the default) or CPU (WebAssembly, 8-bit, ~90 MB). */
 export type KokoroDevice = 'wasm' | 'webgpu';
 interface GpuNavigator {
   gpu?: { requestAdapter(): Promise<unknown> };

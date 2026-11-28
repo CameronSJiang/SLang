@@ -69,7 +69,7 @@ function Quiz({ s, onFinished }: { s: Settings; onFinished(): void }) {
       lang: s.targetLang,
       natural:
         s.dubEngine === 'natural'
-          ? { voice: s.kokoroVoice, speed: s.kokoroSpeed, gpu: s.kokoroGpu }
+          ? { voice: s.kokoroVoice, speed: s.kokoroSpeed, gpu: !s.kokoroCpuOnly }
           : null,
       onStart: () => setMood('talk'),
       onEnd: () => setMood((m) => (m === 'talk' ? 'idle' : m)),

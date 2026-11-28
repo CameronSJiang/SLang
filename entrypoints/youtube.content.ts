@@ -69,7 +69,7 @@ export default defineContentScript({
         settings.dubVoice,
         settings.kokoroVoice,
         settings.kokoroSpeed,
-        settings.kokoroGpu,
+        settings.kokoroCpuOnly,
       ]);
     let dubIssue: DubIssue | null = null;
     let lastSpoken = '';
@@ -136,8 +136,10 @@ export default defineContentScript({
       }
       if (pb.audio === 'dub' && dubIssue === 'fallback') {
         out.push(
-          'The natural voice is catching up, so some lines use your computer’s voice. ' +
-            'For a faster natural voice, try “Use the graphics chip” in SLang settings.',
+          'The natural voice is catching up, so some lines use your computer’s voice.' +
+            (settings.kokoroCpuOnly
+              ? ' For a faster natural voice, turn on “Use the graphics chip” in SLang settings.'
+              : ''),
         );
       }
       return out;
@@ -208,7 +210,7 @@ export default defineContentScript({
                 ? {
                     voice: settings.kokoroVoice,
                     speed: settings.kokoroSpeed,
-                    gpu: settings.kokoroGpu,
+                    gpu: !settings.kokoroCpuOnly,
                   }
                 : null,
             ...on,
@@ -364,7 +366,7 @@ export default defineContentScript({
                     settings.kokoroVoice,
                     settings.kokoroSpeed,
                     onIssue,
-                    settings.kokoroGpu,
+                    !settings.kokoroCpuOnly,
                   ),
                   // When the natural voice falls behind, the system voice covers so the video
                   // keeps playing. (It only reports "blocked"; the engine reports "fallback".)

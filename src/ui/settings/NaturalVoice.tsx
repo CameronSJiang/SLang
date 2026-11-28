@@ -19,7 +19,8 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [warm, setWarm] = useState(false);
-  const wantDevice = s.kokoroGpu && hasWebGPU ? 'webgpu' : 'wasm';
+  const gpu = !s.kokoroCpuOnly;
+  const wantDevice = gpu && hasWebGPU ? 'webgpu' : 'wasm';
   // Ready on the wanted device, or on the CPU after the graphics chip didn't work out.
   const ready = !!status?.loaded && ((status.device ?? 'wasm') === wantDevice || !!status.gpuError);
 
@@ -41,18 +42,18 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
     try {
       let st = status;
       if (!ready) {
-        st = await ttsLoad(s.kokoroGpu);
+        st = await ttsLoad(gpu);
         setStatus(st);
         setWarm(false);
       }
       // The first run after loading compiles the model (slow, especially on the graphics
       // chip), so time a second run for an honest speed.
       if (!warm) {
-        await ttsSpeak('Hola.', s.kokoroVoice, s.kokoroSpeed, s.kokoroGpu);
+        await ttsSpeak('Hola.', s.kokoroVoice, s.kokoroSpeed, gpu);
         setWarm(true);
       }
       const t0 = performance.now();
-      const clip = await ttsSpeak(SAMPLE, s.kokoroVoice, s.kokoroSpeed, s.kokoroGpu);
+      const clip = await ttsSpeak(SAMPLE, s.kokoroVoice, s.kokoroSpeed, gpu);
       const took = (performance.now() - t0) / 1000;
       const url = URL.createObjectURL(new Blob([fromBase64(clip.wav)], { type: 'audio/wav' }));
       await new Audio(url).play();
@@ -69,9 +70,9 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
               : speed >= 1
                 ? '— keeps up with most videos; very chatty ones may use your computer’s voice for some lines.'
                 : '— slower than real time here, so some lines will use your computer’s voice.' +
-                  (hasWebGPU && !s.kokoroGpu ? ' Try “Use the graphics chip” below.' : '')
+                  (hasWebGPU && !gpu ? ' Try “Use the graphics chip” below.' : '')
           }` +
-          (st?.gpuError ? ` (The graphics chip didn’t work: ${st.gpuError}; using the CPU.)` : ''),
+          (st?.gpuError ? ` (Graphics chip not available: ${st.gpuError}; using the CPU.)` : ''),
       );
       if (s.dubEngine !== 'natural') update({ dubEngine: 'natural' });
     } catch (e) {
@@ -122,15 +123,15 @@ export function NaturalVoice({ s, update }: { s: Settings; update(p: Partial<Set
       {note && <p class="muted">{note}</p>}
       {hasWebGPU && (
         <Toggle
-          checked={s.kokoroGpu}
+          checked={gpu}
           onChange={(v) => {
-            update({ kokoroGpu: v });
+            update({ kokoroCpuOnly: !v });
             setNote('');
           }}
         >
           Use the graphics chip{' '}
           <span class="muted">
-            (beta · usually several times faster · one-time ~{GPU_DOWNLOAD_MB} MB download)
+            (on by default · several times faster · one-time ~{GPU_DOWNLOAD_MB} MB download)
           </span>
         </Toggle>
       )}
