@@ -7,7 +7,7 @@
  * a pluggable Speaker: the browser's speechSynthesis, or on-device Kokoro.
  */
 import { findCueIndex } from '../../core/cueIndex';
-import { fitRate, pickVoice, prefetchWindow, slotEnd } from '../../core/dub';
+import { fitRate, pickVoice, prefetchAhead, slotEnd } from '../../core/dub';
 import type { Cue } from '../../core/types';
 
 /** Original audio level while the dub voice speaks, relative to the user's volume. */
@@ -16,8 +16,10 @@ export const DUCK_LEVEL = 0.15;
 const MAX_LATE_S = 1.0;
 /** How long to hold the video waiting for a line's audio before skipping it. */
 const READY_TIMEOUT_MS = 8000;
-/** Prepare audio this far ahead of the playhead (video seconds). */
-export const PREFETCH_S = 90;
+/** Lines of audio prepared ahead of the playhead (topped up as each one is spoken)… */
+export const PREFETCH_LINES = 7;
+/** …but never further ahead than this (video seconds). */
+const PREFETCH_MAX_S = 60;
 /** A line may run this far into the next one before the video waits for it. */
 export const MAX_LAG_S = 1.2;
 /** Start lines slightly early to cover audio start-up latency. */
@@ -140,11 +142,11 @@ export class DubEngine {
     this.prefetch();
   }
 
-  /** Start preparing everything in the next PREFETCH_S seconds (also while paused). */
+  /** Keep the next PREFETCH_LINES lines prepared (also while paused). */
   private prefetch() {
     if (this.stopped) return;
     const t = this.o.video.currentTime || 0;
-    this.speaker.upcoming?.(prefetchWindow(this.cues, t, PREFETCH_S));
+    this.speaker.upcoming?.(prefetchAhead(this.cues, t, PREFETCH_LINES, PREFETCH_MAX_S));
   }
 
   /** Ads, overlay hidden, etc. */

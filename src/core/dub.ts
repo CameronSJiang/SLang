@@ -38,13 +38,18 @@ export function slotEnd(cues: readonly Timed[], i: number): number {
   return Math.max(c.start + 0.3, until);
 }
 
-/** Cues that still need audio within `windowS` seconds of `t` (the current one included), in order. */
-export function prefetchWindow<C extends Timed>(
+/**
+ * The next `lines` cues that still need audio from `t` (the current one included), none starting
+ * more than `maxS` seconds ahead. A small rolling window: as each line is spoken, one more is
+ * added, so the voice engine never floods the computer with work.
+ */
+export function prefetchAhead<C extends Timed>(
   cues: readonly C[],
   t: number,
-  windowS: number,
+  lines: number,
+  maxS: number,
 ): C[] {
-  return cues.filter((c) => c.end > t && c.start < t + windowS);
+  return cues.filter((c) => c.end > t && c.start < t + maxS).slice(0, lines);
 }
 
 export interface VoiceLike {

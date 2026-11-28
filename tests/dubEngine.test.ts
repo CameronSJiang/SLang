@@ -238,3 +238,35 @@ describe('DubEngine with a fallback voice', () => {
     e.stop();
   });
 });
+
+describe('DubEngine prefetch window', () => {
+  it('prepares 7 lines at first, then adds one more as each line is reached', () => {
+    const many: Cue[] = Array.from({ length: 12 }, (_, i) => ({
+      id: `l${i}`,
+      start: i * 3,
+      end: i * 3 + 2,
+      text: `Línea ${i}.`,
+    }));
+    const windows: string[][] = [];
+    const v = new FakeVideo();
+    const e = new DubEngine({
+      video: v as unknown as HTMLVideoElement,
+      lang: 'es',
+      voiceURI: null,
+      speaker: {
+        say: (_c: Cue, _s: number, _r: number, onEnd: () => void) => {
+          onEnd();
+          return { stop: () => {} };
+        },
+        upcoming: (cs: Cue[]) => windows.push(cs.map((c) => c.id)),
+      },
+    });
+    e.setCues(many);
+    expect(windows.at(-1)).toEqual(['l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6']);
+    v.at(3.05); // line 0 done, line 1 playing
+    expect(windows.at(-1)).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7']);
+    v.at(6.05);
+    expect(windows.at(-1)?.at(-1)).toBe('l8');
+    e.stop();
+  });
+});

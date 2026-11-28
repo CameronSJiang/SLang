@@ -14,8 +14,10 @@ interface Ready {
   seconds: number;
 }
 
-/** Clips kept in memory (older ones are released); enough for the 90 s prefetch window. */
-const KEEP = 150;
+/** Clips kept in memory (older ones are released). */
+const KEEP = 30;
+/** Breather between generations so the page (and YouTube) always gets CPU time. */
+const YIELD_MS = 60;
 
 export class KokoroSpeaker implements Speaker {
   private clips = new Map<string, Promise<Ready>>();
@@ -69,6 +71,7 @@ export class KokoroSpeaker implements Speaker {
         const next = this.wanted.find((c) => !this.clips.has(this.key(c)));
         if (!next) return;
         await this.generate(next).catch(() => {});
+        await new Promise((r) => setTimeout(r, YIELD_MS));
       }
     } finally {
       this.working = false;

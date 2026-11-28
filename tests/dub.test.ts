@@ -3,7 +3,7 @@ import {
   MAX_SLOT_EXTEND_S,
   fitRate,
   pickVoice,
-  prefetchWindow,
+  prefetchAhead,
   slotEnd,
   voicesFor,
 } from '../src/core/dub';
@@ -62,14 +62,17 @@ describe('slotEnd', () => {
     expect(slotEnd(cs, 3)).toBe(13 + MAX_SLOT_EXTEND_S));
 });
 
-describe('prefetchWindow', () => {
+describe('prefetchAhead', () => {
   const cs = [
     { id: 'a', start: 0, end: 2 },
     { id: 'b', start: 5, end: 6 },
-    { id: 'c', start: 100, end: 101 },
+    { id: 'c', start: 8, end: 9 },
+    { id: 'd', start: 100, end: 101 },
   ];
-  it('includes the current line and what starts within the window', () =>
-    expect(prefetchWindow(cs, 1, 90).map((c) => c.id)).toEqual(['a', 'b']));
-  it('skips lines already over', () =>
-    expect(prefetchWindow(cs, 3, 90).map((c) => c.id)).toEqual(['b']));
+  it('takes the current line and the next few', () =>
+    expect(prefetchAhead(cs, 1, 2, 60).map((c) => c.id)).toEqual(['a', 'b']));
+  it('rolls forward as lines finish', () =>
+    expect(prefetchAhead(cs, 3, 2, 60).map((c) => c.id)).toEqual(['b', 'c']));
+  it('never reaches too far ahead in time', () =>
+    expect(prefetchAhead(cs, 7, 5, 60).map((c) => c.id)).toEqual(['c']));
 });

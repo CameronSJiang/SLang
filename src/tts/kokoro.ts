@@ -27,8 +27,9 @@ export type KokoroVoice = string;
 const wasm = env.backends.onnx.wasm;
 if (wasm) {
   wasm.wasmPaths = browser.runtime.getURL('/ort/' as '/');
+  // At most half the cores, so the video and the rest of the browser stay smooth.
   wasm.numThreads = globalThis.crossOriginIsolated
-    ? Math.min(4, navigator.hardwareConcurrency || 1)
+    ? Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 2) / 2)))
     : 1;
 }
 env.allowLocalModels = false;
